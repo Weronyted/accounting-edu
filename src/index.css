@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(14px, 2.5vw, 16px);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-700 {
+    font-weight: 700;
+  }
+  .font-600 {
+    font-weight: 600;
+  }
+}
+
+/* Shimmer border animation */
+@keyframes shimmerBorder {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-border:hover {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 91, 219, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerBorder 2s linear infinite;
+}
+
+/* Print styles */
+@media print {
+  nav, aside, footer, .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    max-width: 100%;
+  }
+
+  body {
+    font-size: 12pt;
+    color: #000;
+  }
+}

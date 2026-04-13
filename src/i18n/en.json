@@ -1,0 +1,215 @@
+{
+  "nav": {
+    "lessons": "Lessons",
+    "dashboard": "Dashboard",
+    "glossary": "Glossary",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "search": "Search...",
+    "searchPlaceholder": "Search lessons, terms...",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Free Accounting Education",
+      "title": "Master Accounting",
+      "titleHighlight": "Step by Step",
+      "subtitle": "Interactive lessons, real-world examples, and instant quizzes. Go from zero to confident in accounting — at your own pace.",
+      "cta": "Start Learning Free",
+      "ctaSecondary": "View All Topics",
+      "stats": {
+        "lessons": "8 Topics",
+        "lessonsDesc": "Structured lessons",
+        "quizzes": "200+ Questions",
+        "quizzesDesc": "Practice quizzes",
+        "languages": "3 Languages",
+        "languagesDesc": "EN / RU / UZ"
+      }
+    },
+    "features": {
+      "title": "Everything You Need to Learn Accounting",
+      "interactive": {
+        "title": "Interactive Diagrams",
+        "desc": "T-accounts, balance sheets, and flow diagrams you can interact with — not just read."
+      },
+      "quizzes": {
+        "title": "Exam-Style Quizzes",
+        "desc": "Practice with transaction tables and classification exercises modeled on real exams."
+      },
+      "progress": {
+        "title": "Track Your Progress",
+        "desc": "Dashboard with radar charts, badges, and streaks to keep you motivated."
+      },
+      "multilingual": {
+        "title": "Three Languages",
+        "desc": "Full content in English, Russian, and Uzbek — switch anytime."
+      }
+    },
+    "topics": {
+      "title": "8 Topics Covering Core Accounting",
+      "subtitle": "From the basics of bookkeeping to payroll — everything you need."
+    },
+    "cta": {
+      "title": "Ready to Start?",
+      "subtitle": "Join thousands of learners mastering accounting online.",
+      "button": "Get Started Free"
+    }
+  },
+  "lessons": {
+    "readTime": "{{min}} min read",
+    "sections": "Sections",
+    "yourScore": "Your Score",
+    "notAttempted": "Not attempted",
+    "nextLesson": "Next Lesson",
+    "prevLesson": "Previous Lesson",
+    "bookmark": "Bookmarks",
+    "bookmarked": "Bookmarked",
+    "printLesson": "Print Lesson",
+    "formulas": "Formulas",
+    "keyTerms": "Key Terms",
+    "didYouKnow": "Did You Know?",
+    "workedExample": "Worked Example",
+    "practice": "Practice Questions",
+    "quizTransaction": "Practice Quiz — Transaction Analysis",
+    "quizClassify": "Practice Quiz — Account Classification",
+    "tAccountWidget": "Interactive T-Account",
+    "home": "Home",
+    "contentsButton": "Contents"
+  },
+  "quiz": {
+    "title": "Quiz",
+    "submit": "Submit Answers",
+    "tryAgain": "Try Again",
+    "nextTopic": "Next Topic",
+    "showSolution": "Show Solution",
+    "hideSolution": "Hide Solution",
+    "score": "You got {{correct}} / {{total}} correct ({{percent}}%)",
+    "perfect": "Perfect score! Outstanding work!",
+    "great": "Great job! Keep it up!",
+    "good": "Good effort. Review the mistakes and try again.",
+    "keepTrying": "Keep practising — you'll get there!",
+    "accountDebited": "Account Debited",
+    "accountCredited": "Account Credited",
+    "category": "Category",
+    "classification": "Classification",
+    "transaction": "Transaction",
+    "account": "Account Name",
+    "answerReview": "Answer Review",
+    "categories": {
+      "asset": "Asset",
+      "liability": "Liability",
+      "equity": "Equity",
+      "income": "Income",
+      "expense": "Expense",
+      "currentAsset": "Current Asset",
+      "nonCurrentAsset": "Non-Current Asset",
+      "currentLiability": "Current Liability",
+      "nonCurrentLiability": "Non-Current Liability"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "progress": "Your Progress",
+    "topicsCompleted": "{{completed}} / {{total}} topics completed",
+    "recentActivity": "Recent Activity",
+    "badgesTitle": "Your Badges",
+    "streak": "Day Streak",
+    "streakDesc": "days in a row",
+    "noActivity": "No activity yet. Start a lesson!",
+    "radarTitle": "Quiz Score Radar",
+    "status": {
+      "notStarted": "Not Started",
+      "inProgress": "In Progress",
+      "completed": "Completed"
+    },
+    "buttons": {
+      "start": "Start",
+      "continue": "Continue",
+      "review": "Review"
+    },
+    "badges": {
+      "firstStep": "First Step",
+      "firstStepDesc": "Complete your first topic",
+      "bookkeeper": "Bookkeeper",
+      "bookkeeperDesc": "Complete 3 topics",
+      "accountant": "Accountant",
+      "accountantDesc": "Complete 6 topics",
+      "seniorAccountant": "Senior Accountant",
+      "seniorAccountantDesc": "Complete all 8 topics",
+      "cfo": "CFO",
+      "cfoDesc": "Complete all 8 topics with 80%+",
+      "perfectScore": "Perfect Score",
+      "perfectScoreDesc": "Score 100% on any quiz",
+      "persistent": "Persistent",
+      "persistentDesc": "Attempt any quiz 3+ times"
+    }
+  },
+  "glossary": {
+    "title": "Accounting Glossary",
+    "subtitle": "40+ terms with definitions and examples",
+    "search": "Search terms...",
+    "filterByTopic": "Filter by topic",
+    "allTopics": "All Topics",
+    "noResults": "No terms found matching your search.",
+    "example": "Example",
+    "topic": "Topic"
+  },
+  "profile": {
+    "title": "My Profile",
+    "editProfile": "Edit Profile",
+    "quizHistory": "Quiz History",
+    "bookmarks": "Bookmarks",
+    "noBookmarks": "No bookmarks yet.",
+    "noHistory": "No quiz history yet.",
+    "takeQuiz": "Take a quiz",
+    "score": "Score",
+    "date": "Date",
+    "attempts": "Attempts",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "auth": {
+    "signInTitle": "Sign In to AccountingEdu",
+    "signInSubtitle": "Save your progress and access it from any device.",
+    "continueWithGoogle": "Continue with Google",
+    "orSignInWithEmail": "Or sign in with email",
+    "email": "Email address",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "forgotPassword": "Forgot password?",
+    "guestMode": "Continue as Guest",
+    "guestNote": "Guest progress is saved locally and will be lost if you clear your browser data.",
+    "requiredTitle": "Sign in to continue",
+    "requiredSubtitle": "Create a free account to access lessons, quizzes, and track your progress.",
+    "back": "← Back to Home"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "notFoundDesc": "The page you're looking for doesn't exist.",
+    "backHome": "Back to Home",
+    "loadFailed": "Failed to load. Please try again.",
+    "authFailed": "Authentication failed. Please try again.",
+    "saveFailed": "Failed to save progress."
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "of": "of",
+    "by": "by",
+    "home": "Home"
+  }
+}

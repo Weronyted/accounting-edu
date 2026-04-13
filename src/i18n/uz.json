@@ -1,0 +1,215 @@
+{
+  "nav": {
+    "lessons": "Darslar",
+    "dashboard": "Panel",
+    "glossary": "Lug'at",
+    "profile": "Profil",
+    "signIn": "Kirish",
+    "signOut": "Chiqish",
+    "search": "Qidirish...",
+    "searchPlaceholder": "Darslar, atamalar qidirish...",
+    "theme": {
+      "light": "Yorug'",
+      "dark": "Qorong'u"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Bepul buxgalteriya ta'limi",
+      "title": "Buxgalteriyani o'rganing",
+      "titleHighlight": "bosqichma-bosqich",
+      "subtitle": "Interaktiv darslar, real misollar va tezkor testlar. O'z sur'atingizda buxgalteriyani o'rganing.",
+      "cta": "Bepul boshlash",
+      "ctaSecondary": "Barcha mavzular",
+      "stats": {
+        "lessons": "8 mavzu",
+        "lessonsDesc": "Tizimli darslar",
+        "quizzes": "200+ savol",
+        "quizzesDesc": "Amaliy testlar",
+        "languages": "3 til",
+        "languagesDesc": "EN / RU / UZ"
+      }
+    },
+    "features": {
+      "title": "Buxgalteriyani o'rganish uchun zarur hamma narsa",
+      "interactive": {
+        "title": "Interaktiv diagrammalar",
+        "desc": "T-hisoblar, balans va oqim diagrammalari — faqat o'qimang, o'zingiz ishlang."
+      },
+      "quizzes": {
+        "title": "Imtihon formatidagi testlar",
+        "desc": "Tranzaksiya jadvallari va tasniflash mashqlari bilan mashq qiling."
+      },
+      "progress": {
+        "title": "Taraqqiyotingizni kuzating",
+        "desc": "Radar diagrammalar, nishonlar va ketma-ketliklar bilan motivatsiya paneliniz."
+      },
+      "multilingual": {
+        "title": "Uch tilda",
+        "desc": "Ingliz, rus va o'zbek tillarida to'liq kontent — istalgan vaqtda almashtiring."
+      }
+    },
+    "topics": {
+      "title": "Buxgalteriyaning asosiy 8 mavzusi",
+      "subtitle": "Buxgalteriyaning asoslaridan ish haqi hisoblashgacha — zarur hamma narsa."
+    },
+    "cta": {
+      "title": "Boshlashga tayyormisiz?",
+      "subtitle": "Minglab o'quvchilar bilan birga onlayn buxgalteriyani o'rganing.",
+      "button": "Bepul boshlash"
+    }
+  },
+  "lessons": {
+    "readTime": "{{min}} daqiqa o'qish",
+    "sections": "Bo'limlar",
+    "yourScore": "Sizning natijangiz",
+    "notAttempted": "Urinilmagan",
+    "nextLesson": "Keyingi dars",
+    "prevLesson": "Oldingi dars",
+    "bookmark": "Xatchcho'plar",
+    "bookmarked": "Xatchcho'pda",
+    "printLesson": "Darsni chop etish",
+    "formulas": "Formulalar",
+    "keyTerms": "Asosiy atamalar",
+    "didYouKnow": "Bilasizmi?",
+    "workedExample": "Ishlangan misol",
+    "practice": "Amaliy savollar",
+    "quizTransaction": "Amaliy test — Tranzaksiyalar tahlili",
+    "quizClassify": "Amaliy test — Hisoblarni tasniflash",
+    "tAccountWidget": "Interaktiv T-hisob",
+    "home": "Bosh sahifa",
+    "contentsButton": "Mundarija"
+  },
+  "quiz": {
+    "title": "Test",
+    "submit": "Javoblarni yuborish",
+    "tryAgain": "Qayta urinish",
+    "nextTopic": "Keyingi mavzu",
+    "showSolution": "Yechimni ko'rsatish",
+    "hideSolution": "Yechimni yashirish",
+    "score": "{{total}} ta savoldan {{correct}} tasiga to'g'ri javob berdingiz ({{percent}}%)",
+    "perfect": "Mukammal natija! Ajoyib ish!",
+    "great": "Zo'r ish! Davom eting!",
+    "good": "Yaxshi harakat. Xatolarni ko'rib chiqing va qayta urinib ko'ring.",
+    "keepTrying": "Mashq qilishda davom eting — muvaffaqiyat siznikida!",
+    "accountDebited": "Debet hisobi",
+    "accountCredited": "Kredit hisobi",
+    "category": "Toifa",
+    "classification": "Tasnif",
+    "transaction": "Tranzaksiya",
+    "account": "Hisob nomi",
+    "answerReview": "Javoblarni ko'rib chiqish",
+    "categories": {
+      "asset": "Aktiv",
+      "liability": "Majburiyat",
+      "equity": "Kapital",
+      "income": "Daromad",
+      "expense": "Xarajat",
+      "currentAsset": "Joriy aktiv",
+      "nonCurrentAsset": "Uzoq muddatli aktiv",
+      "currentLiability": "Joriy majburiyat",
+      "nonCurrentLiability": "Uzoq muddatli majburiyat"
+    }
+  },
+  "dashboard": {
+    "welcome": "Xush kelibsiz, {{name}}!",
+    "progress": "Sizning taraqqiyotingiz",
+    "topicsCompleted": "{{total}} mavzudan {{completed}} tasi tugatildi",
+    "recentActivity": "So'nggi faollik",
+    "badgesTitle": "Sizning nishonlaringiz",
+    "streak": "Ketma-ketlik",
+    "streakDesc": "kun ketma-ket",
+    "noActivity": "Hali faollik yo'q. Darsni boshlang!",
+    "radarTitle": "Test natijalari radari",
+    "status": {
+      "notStarted": "Boshlanmagan",
+      "inProgress": "Jarayonda",
+      "completed": "Tugatilgan"
+    },
+    "buttons": {
+      "start": "Boshlash",
+      "continue": "Davom etish",
+      "review": "Takrorlash"
+    },
+    "badges": {
+      "firstStep": "Birinchi qadam",
+      "firstStepDesc": "Birinchi mavzuni tugatish",
+      "bookkeeper": "Buxgalter",
+      "bookkeeperDesc": "3 ta mavzuni tugatish",
+      "accountant": "Hisobchi",
+      "accountantDesc": "6 ta mavzuni tugatish",
+      "seniorAccountant": "Katta hisobchi",
+      "seniorAccountantDesc": "Barcha 8 ta mavzuni tugatish",
+      "cfo": "CFO",
+      "cfoDesc": "Barcha 8 ta mavzuni 80%+ bilan tugatish",
+      "perfectScore": "Mukammal natija",
+      "perfectScoreDesc": "Istalgan testda 100% olish",
+      "persistent": "Qat'iyatli",
+      "persistentDesc": "Istalgan testga 3+ marta urinish"
+    }
+  },
+  "glossary": {
+    "title": "Buxgalteriya lug'ati",
+    "subtitle": "Ta'riflar va misollar bilan 40+ atama",
+    "search": "Atamalarni qidirish...",
+    "filterByTopic": "Mavzu bo'yicha filtrlash",
+    "allTopics": "Barcha mavzular",
+    "noResults": "Qidiruvingizga mos atamalar topilmadi.",
+    "example": "Misol",
+    "topic": "Mavzu"
+  },
+  "profile": {
+    "title": "Mening profilim",
+    "editProfile": "Profilni tahrirlash",
+    "quizHistory": "Test tarixi",
+    "bookmarks": "Xatchcho'plar",
+    "noBookmarks": "Hali xatchcho'plar yo'q.",
+    "noHistory": "Test tarixi bo'sh.",
+    "takeQuiz": "Test topshirish",
+    "score": "Natija",
+    "date": "Sana",
+    "attempts": "Urinishlar",
+    "language": "Til",
+    "theme": "Mavzu"
+  },
+  "auth": {
+    "signInTitle": "AccountingEdu'ga kiring",
+    "signInSubtitle": "Taraqqiyotingizni saqlang va istalgan qurilmadan kiring.",
+    "continueWithGoogle": "Google orqali kirish",
+    "orSignInWithEmail": "Yoki email orqali kiring",
+    "email": "Email manzil",
+    "password": "Parol",
+    "signIn": "Kirish",
+    "signUp": "Hisob yaratish",
+    "noAccount": "Hisob yo'qmi?",
+    "hasAccount": "Allaqachon hisob bormi?",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "guestMode": "Mehmon sifatida davom etish",
+    "guestNote": "Mehmon taraqqiyoti mahalliy saqlanadi va brauzer tozalanganda yo'qoladi.",
+    "requiredTitle": "Davom etish uchun kiring",
+    "requiredSubtitle": "Darslar, testlar va taraqqiyotni kuzatish uchun bepul hisob yarating.",
+    "back": "← Bosh sahifaga"
+  },
+  "errors": {
+    "notFound": "Sahifa topilmadi",
+    "notFoundDesc": "Siz qidirayotgan sahifa mavjud emas.",
+    "backHome": "Bosh sahifaga",
+    "loadFailed": "Yuklab bo'lmadi. Qayta urinib ko'ring.",
+    "authFailed": "Autentifikatsiya xatosi. Qayta urinib ko'ring.",
+    "saveFailed": "Taraqqiyotni saqlab bo'lmadi."
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "close": "Yopish",
+    "back": "Orqaga",
+    "next": "Keyingi",
+    "previous": "Oldingi",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "of": "dan",
+    "by": "bo'yicha",
+    "home": "Bosh sahifa"
+  }
+}
