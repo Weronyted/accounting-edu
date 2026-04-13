@@ -19,7 +19,6 @@ export const useLanguageStore = create<LanguageStore>()(
       setLanguage: (language) => {
         set({ language })
         i18n.changeLanguage(language)
-        localStorage.setItem('language', language)
       },
       cycleLanguage: () => {
         const current = get().language
@@ -28,6 +27,14 @@ export const useLanguageStore = create<LanguageStore>()(
         get().setLanguage(next)
       },
     }),
-    { name: 'language' }
+    {
+      name: 'language',
+      onRehydrateStorage: () => (state) => {
+        // Sync i18n with the persisted language on page load
+        if (state?.language) {
+          i18n.changeLanguage(state.language)
+        }
+      },
+    }
   )
 )

@@ -4,7 +4,22 @@ import en from './en.json'
 import ru from './ru.json'
 import uz from './uz.json'
 
-const savedLang = localStorage.getItem('language') || 'en'
+const VALID_LANGS = ['en', 'ru', 'uz']
+
+function getInitialLang(): string {
+  try {
+    const raw = localStorage.getItem('language')
+    if (!raw) return 'en'
+    // Plain string (e.g. 'ru')
+    if (VALID_LANGS.includes(raw)) return raw
+    // Zustand persist format: {"state":{"language":"ru"},"version":0}
+    const parsed = JSON.parse(raw)
+    const lang = parsed?.state?.language
+    return VALID_LANGS.includes(lang) ? lang : 'en'
+  } catch {
+    return 'en'
+  }
+}
 
 i18n
   .use(initReactI18next)
@@ -14,7 +29,7 @@ i18n
       ru: { translation: ru },
       uz: { translation: uz },
     },
-    lng: savedLang,
+    lng: getInitialLang(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
