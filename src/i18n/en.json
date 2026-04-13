@@ -26,8 +26,8 @@
         "lessonsDesc": "Structured lessons",
         "quizzes": "200+ Questions",
         "quizzesDesc": "Practice quizzes",
-        "languages": "3 Languages",
-        "languagesDesc": "EN / RU / UZ"
+        "free": "100% Free",
+        "freeDesc": "No paywalls, ever"
       }
     },
     "features": {
@@ -44,9 +44,9 @@
         "title": "Track Your Progress",
         "desc": "Dashboard with radar charts, badges, and streaks to keep you motivated."
       },
-      "multilingual": {
-        "title": "Three Languages",
-        "desc": "Full content in English, Russian, and Uzbek — switch anytime."
+      "free": {
+        "title": "Completely Free",
+        "desc": "All lessons, quizzes, and progress tracking — no subscription, no paywalls."
       }
     },
     "topics": {

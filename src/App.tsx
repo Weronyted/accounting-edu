@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -14,7 +14,6 @@ import { NotFound } from '@/pages/NotFound'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
 import { useKeyboard } from '@/hooks/useKeyboard'
-import { useLanguageStore } from '@/store/useLanguageStore'
 
 function AppRoutes() {
   const location = useLocation()
@@ -33,41 +32,10 @@ function AppRoutes() {
   )
 }
 
-function LanguageTransitionOverlay() {
-  const { language } = useLanguageStore()
-  const [flash, setFlash] = useState(false)
-  const [prev, setPrev] = useState(language)
-
-  useEffect(() => {
-    if (language !== prev) {
-      setFlash(true)
-      setPrev(language)
-      const t = setTimeout(() => setFlash(false), 400)
-      return () => clearTimeout(t)
-    }
-  }, [language])
-
-  return (
-    <AnimatePresence>
-      {flash && (
-        <motion.div
-          key="lang-flash"
-          initial={{ opacity: 0.6 }}
-          animate={{ opacity: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-          className="fixed inset-0 z-[9999] bg-white dark:bg-slate-900 pointer-events-none"
-        />
-      )}
-    </AnimatePresence>
-  )
-}
-
 export default function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
-  // Initialise auth listener (must be inside Router context)
   useAuth()
   useKeyboard({ onSearchOpen: () => setSearchOpen(true) })
 
@@ -83,7 +51,6 @@ export default function App() {
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <LanguageTransitionOverlay />
     </div>
   )
 }

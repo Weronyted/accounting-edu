@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useThemeStore } from '@/store/useThemeStore'
-import { useLanguageStore } from '@/store/useLanguageStore'
 import { LESSON_SLUGS } from '@/lessons'
 
 interface UseKeyboardOptions {
@@ -12,7 +11,6 @@ export function useKeyboard({ onSearchOpen }: UseKeyboardOptions = {}) {
   const navigate = useNavigate()
   const location = useLocation()
   const { toggleTheme } = useThemeStore()
-  const { cycleLanguage } = useLanguageStore()
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -34,12 +32,6 @@ export function useKeyboard({ onSearchOpen }: UseKeyboardOptions = {}) {
         return
       }
 
-      // L — cycle language
-      if (e.key === 'l' || e.key === 'L') {
-        cycleLanguage()
-        return
-      }
-
       // Arrow keys on lesson pages
       const lessonMatch = location.pathname.match(/\/lessons\/(.+)/)
       if (lessonMatch) {
@@ -57,5 +49,5 @@ export function useKeyboard({ onSearchOpen }: UseKeyboardOptions = {}) {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [navigate, location, toggleTheme, cycleLanguage, onSearchOpen])
+  }, [navigate, location, toggleTheme, onSearchOpen])
 }

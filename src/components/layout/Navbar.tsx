@@ -4,19 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sun, Moon, Search, Menu, X, BookOpen, LayoutDashboard,
-  BookMarked, User, LogOut, ChevronDown
+  BookMarked, User, LogOut
 } from 'lucide-react'
 import { useThemeStore } from '@/store/useThemeStore'
-import { useLanguageStore } from '@/store/useLanguageStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { signOut } from '@/services/auth.service'
 import { UserAvatar } from '@/components/auth/UserAvatar'
-
-const LANG_OPTIONS = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'uz', label: "O'zbek", flag: '🇺🇿' },
-] as const
 
 interface NavbarProps {
   onSearchOpen: () => void
@@ -27,10 +20,8 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
   const { t } = useTranslation()
   const location = useLocation()
   const { theme, toggleTheme } = useThemeStore()
-  const { language, setLanguage } = useLanguageStore()
   const { user } = useAuthStore()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [langOpen, setLangOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const navLinks = [
@@ -38,8 +29,6 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
     { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { href: '/glossary', label: t('nav.glossary'), icon: BookMarked },
   ]
-
-  const currentLang = LANG_OPTIONS.find((l) => l.code === language) ?? LANG_OPTIONS[0]
 
   async function handleSignOut() {
     await signOut()
@@ -65,7 +54,7 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
                 key={href}
                 to={href}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname.startsWith(href.split('/')[1] === '' ? '/' : '/' + href.split('/')[1])
+                  location.pathname.startsWith('/' + href.split('/')[1])
                     ? 'bg-primary/10 text-primary dark:text-primary-dark'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
@@ -75,7 +64,7 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
             ))}
           </div>
 
-          {/* Right side controls */}
+          {/* Right side */}
           <div className="flex items-center gap-2">
             {/* Search */}
             <button
@@ -86,48 +75,10 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
               <Search size={18} />
             </button>
 
-            {/* Language switcher */}
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <span>{currentLang.flag}</span>
-                <span className="hidden lg:block">{currentLang.label}</span>
-                <ChevronDown size={14} />
-              </button>
-              <AnimatePresence>
-                {langOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="absolute right-0 mt-1 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden z-50"
-                  >
-                    {LANG_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.code}
-                        onClick={() => { setLanguage(opt.code); setLangOpen(false) }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
-                          language === opt.code
-                            ? 'bg-primary/10 text-primary dark:text-primary-dark font-medium'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <span>{opt.flag}</span>
-                        <span>{opt.label}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Toggle theme (T)"
             >
               <motion.div
                 key={theme}
@@ -220,26 +171,6 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
                 </Link>
               ))}
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                {/* Language options */}
-                <p className="px-3 py-1 text-xs font-medium text-slate-400 uppercase tracking-wide">
-                  {t('profile.language')}
-                </p>
-                {LANG_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.code}
-                    onClick={() => { setLanguage(opt.code); setMobileOpen(false) }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      language === opt.code
-                        ? 'text-primary dark:text-primary-dark font-medium bg-primary/10'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {opt.flag} {opt.label}
-                  </button>
-                ))}
-              </div>
-
               {!user && (
                 <button
                   onClick={() => { onSignInOpen(); setMobileOpen(false) }}
@@ -253,12 +184,8 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
         )}
       </AnimatePresence>
 
-      {/* Click outside to close dropdowns */}
-      {(langOpen || userMenuOpen) && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => { setLangOpen(false); setUserMenuOpen(false) }}
-        />
+      {userMenuOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
       )}
     </nav>
   )

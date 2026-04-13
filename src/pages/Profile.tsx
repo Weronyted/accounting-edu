@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { User, BookMarked, History, Settings } from 'lucide-react'
-import { useLanguageStore } from '@/store/useLanguageStore'
+import { User, BookMarked, History } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -16,7 +15,6 @@ export function Profile() {
   const { t } = useTranslation()
   const { user } = useAuthStore()
   const { progress } = useProgressStore()
-  const { language } = useLanguageStore()
 
   if (!user) {
     return (
@@ -66,13 +64,6 @@ export function Profile() {
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{user.email}</p>
 
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2 text-left">
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <Settings size={14} />
-                  <span className="font-medium">{t('profile.language')}:</span>
-                  <span>{language.toUpperCase()}</span>
-                </div>
-              </div>
             </Card>
           </div>
 

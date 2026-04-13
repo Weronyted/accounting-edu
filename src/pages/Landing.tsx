@@ -27,7 +27,7 @@ export function Landing() {
     { icon: Zap, title: t('landing.features.interactive.title'), desc: t('landing.features.interactive.desc') },
     { icon: BookOpen, title: t('landing.features.quizzes.title'), desc: t('landing.features.quizzes.desc') },
     { icon: BarChart2, title: t('landing.features.progress.title'), desc: t('landing.features.progress.desc') },
-    { icon: Globe, title: t('landing.features.multilingual.title'), desc: t('landing.features.multilingual.desc') },
+    { icon: Globe, title: t('landing.features.free.title'), desc: t('landing.features.free.desc') },
   ]
 
   return (
@@ -133,7 +133,7 @@ export function Landing() {
             {[
               { value: t('landing.hero.stats.lessons'), label: t('landing.hero.stats.lessonsDesc') },
               { value: t('landing.hero.stats.quizzes'), label: t('landing.hero.stats.quizzesDesc') },
-              { value: t('landing.hero.stats.languages'), label: t('landing.hero.stats.languagesDesc') },
+              { value: t('landing.hero.stats.free'), label: t('landing.hero.stats.freeDesc') },
             ].map((stat) => (
               <div key={stat.value} className="text-center">
                 <p className="font-heading font-semibold text-xl text-slate-900 dark:text-white">{stat.value}</p>
