@@ -116,7 +116,7 @@ export function TransactionTable({ rows, topicSlug, businessName = 'Sunrise Bake
         {t('quiz.title')} — Transaction Table
       </h3>
       <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-        Business: {businessName}
+        {t('quiz.businessLabel')} {businessName}
       </p>
       {scenario && (
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{scenario}</p>
@@ -143,7 +143,7 @@ export function TransactionTable({ rows, topicSlug, businessName = 'Sunrise Bake
                       type="text"
                       value={answers[row.id]?.debit ?? ''}
                       onChange={(e) => updateAnswer(row.id, 'debit', e.target.value)}
-                      placeholder="Account..."
+                      placeholder={t('quiz.accountPlaceholder')}
                       className={`w-full px-2 py-1.5 text-xs rounded-lg border focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent outline-none min-h-[44px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white ${cellClass(cellState(row.id, 'debit')) || 'border-slate-300 dark:border-slate-600'}`}
                     />
                     {submitted && cellState(row.id, 'debit') === 'wrong' && (
@@ -157,7 +157,7 @@ export function TransactionTable({ rows, topicSlug, businessName = 'Sunrise Bake
                       type="text"
                       value={answers[row.id]?.credit ?? ''}
                       onChange={(e) => updateAnswer(row.id, 'credit', e.target.value)}
-                      placeholder="Account..."
+                      placeholder={t('quiz.accountPlaceholder')}
                       className={`w-full px-2 py-1.5 text-xs rounded-lg border focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent outline-none min-h-[44px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white ${cellClass(cellState(row.id, 'credit')) || 'border-slate-300 dark:border-slate-600'}`}
                     />
                     {submitted && cellState(row.id, 'credit') === 'wrong' && (
@@ -171,7 +171,7 @@ export function TransactionTable({ rows, topicSlug, businessName = 'Sunrise Bake
                     onChange={(e) => updateAnswer(row.id, 'category', e.target.value)}
                     className={`w-full px-2 py-1.5 text-xs rounded-lg border focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent outline-none min-h-[44px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white ${cellClass(cellState(row.id, 'category')) || 'border-slate-300 dark:border-slate-600'}`}
                   >
-                    <option value="">Select...</option>
+                    <option value="">{t('quiz.selectPlaceholder')}</option>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                   {submitted && cellState(row.id, 'category') === 'wrong' && (

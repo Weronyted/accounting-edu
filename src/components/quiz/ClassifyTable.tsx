@@ -93,7 +93,7 @@ export function ClassifyTable({ rows, topicSlug, businessContext }: ClassifyTabl
                     onChange={(e) => handleChange(row.id, e.target.value)}
                     className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent outline-none min-h-[44px]"
                   >
-                    <option value="">Select...</option>
+                    <option value="">{t('quiz.selectPlaceholder')}</option>
                     {CLASSIFICATIONS.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}

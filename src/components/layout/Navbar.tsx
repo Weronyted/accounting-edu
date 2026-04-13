@@ -223,7 +223,7 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 {/* Language options */}
                 <p className="px-3 py-1 text-xs font-medium text-slate-400 uppercase tracking-wide">
-                  Language
+                  {t('profile.language')}
                 </p>
                 {LANG_OPTIONS.map((opt) => (
                   <button

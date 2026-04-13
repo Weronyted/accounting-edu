@@ -114,7 +114,7 @@ export function QuizResult({ correct, total, topicSlug, onTryAgain, feedback }: 
       {/* Feedback list */}
       <div className="p-5 space-y-3">
         <h3 className="font-heading font-semibold text-slate-800 dark:text-slate-200 text-sm">
-          Answer Review
+          {t('quiz.answerReview')}
         </h3>
         {feedback.map((f, i) => (
           <div
@@ -134,10 +134,10 @@ export function QuizResult({ correct, total, topicSlug, onTryAgain, feedback }: 
               {!f.correct && (
                 <>
                   <p className="text-red-600 dark:text-red-400 text-xs mt-0.5">
-                    Your answer: {f.yourAnswer || '—'}
+                    {t('quiz.yourAnswer')} {f.yourAnswer || '—'}
                   </p>
                   <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">
-                    Correct: {f.correctAnswer}
+                    {t('quiz.correctAnswer')} {f.correctAnswer}
                   </p>
                 </>
               )}

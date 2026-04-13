@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { User, BookMarked, History, Settings } from 'lucide-react'
+import { useLanguageStore } from '@/store/useLanguageStore'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -15,6 +16,7 @@ export function Profile() {
   const { t } = useTranslation()
   const { user } = useAuthStore()
   const { progress } = useProgressStore()
+  const { language } = useLanguageStore()
 
   if (!user) {
     return (
@@ -68,7 +70,7 @@ export function Profile() {
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <Settings size={14} />
                   <span className="font-medium">{t('profile.language')}:</span>
-                  <span>{localStorage.getItem('language')?.toUpperCase() ?? 'EN'}</span>
+                  <span>{language.toUpperCase()}</span>
                 </div>
               </div>
             </Card>
@@ -86,7 +88,10 @@ export function Profile() {
               </div>
               {quizHistory.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  No quiz history yet. <Link to="/lessons/intro-to-accounting" className="text-primary dark:text-primary-dark hover:underline">Take a quiz</Link>
+                  {t('profile.noHistory')}{' '}
+                  <Link to="/lessons/intro-to-accounting" className="text-primary dark:text-primary-dark hover:underline">
+                    {t('profile.takeQuiz')}
+                  </Link>
                 </p>
               ) : (
                 <div className="space-y-2">

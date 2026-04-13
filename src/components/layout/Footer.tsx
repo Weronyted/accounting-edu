@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { BookOpen, Heart } from 'lucide-react'
 
 export function Footer() {
+  const { t } = useTranslation()
+
   return (
     <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -14,13 +17,19 @@ export function Footer() {
           </Link>
 
           <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-400">
-            <Link to="/glossary" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Glossary</Link>
-            <Link to="/dashboard" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Dashboard</Link>
-            <Link to="/lessons/intro-to-accounting" className="hover:text-primary dark:hover:text-primary-dark transition-colors">Lessons</Link>
+            <Link to="/glossary" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
+              {t('nav.glossary')}
+            </Link>
+            <Link to="/dashboard" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
+              {t('nav.dashboard')}
+            </Link>
+            <Link to="/lessons/intro-to-accounting" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
+              {t('nav.lessons')}
+            </Link>
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
-            Made with <Heart size={12} className="text-danger" /> for learners
+            {t('footer.madeWith')} <Heart size={12} className="text-danger" /> {t('footer.forLearners')}
           </p>
         </div>
       </div>

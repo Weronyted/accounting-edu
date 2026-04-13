@@ -99,6 +99,11 @@
     "transaction": "Операция",
     "account": "Название счёта",
     "answerReview": "Разбор ответов",
+    "yourAnswer": "Ваш ответ:",
+    "correctAnswer": "Правильно:",
+    "accountPlaceholder": "Счёт...",
+    "selectPlaceholder": "Выберите...",
+    "businessLabel": "Компания:",
     "categories": {
       "asset": "Актив",
       "liability": "Обязательство",
@@ -170,7 +175,8 @@
     "date": "Дата",
     "attempts": "Попыток",
     "language": "Язык",
-    "theme": "Тема"
+    "theme": "Тема",
+    "languageLabel": "Язык"
   },
   "auth": {
     "signInTitle": "Войдите в AccountingEdu",
@@ -188,7 +194,9 @@
     "guestNote": "Прогресс гостя сохраняется локально и будет потерян при очистке браузера.",
     "requiredTitle": "Войдите, чтобы продолжить",
     "requiredSubtitle": "Создайте бесплатный аккаунт для доступа к урокам, тестам и отслеживания прогресса.",
-    "back": "← На главную"
+    "back": "← На главную",
+    "backShort": "← Назад",
+    "displayName": "Имя пользователя"
   },
   "errors": {
     "notFound": "Страница не найдена",
@@ -211,5 +219,9 @@
     "of": "из",
     "by": "по",
     "home": "Главная"
+  },
+  "footer": {
+    "madeWith": "Сделано с",
+    "forLearners": "для учащихся"
   }
 }

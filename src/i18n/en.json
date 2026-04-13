@@ -99,6 +99,11 @@
     "transaction": "Transaction",
     "account": "Account Name",
     "answerReview": "Answer Review",
+    "yourAnswer": "Your answer:",
+    "correctAnswer": "Correct:",
+    "accountPlaceholder": "Account...",
+    "selectPlaceholder": "Select...",
+    "businessLabel": "Business:",
     "categories": {
       "asset": "Asset",
       "liability": "Liability",
@@ -188,7 +193,9 @@
     "guestNote": "Guest progress is saved locally and will be lost if you clear your browser data.",
     "requiredTitle": "Sign in to continue",
     "requiredSubtitle": "Create a free account to access lessons, quizzes, and track your progress.",
-    "back": "← Back to Home"
+    "back": "← Back to Home",
+    "backShort": "← Back",
+    "displayName": "Display name"
   },
   "errors": {
     "notFound": "Page not found",
@@ -211,5 +218,9 @@
     "of": "of",
     "by": "by",
     "home": "Home"
+  },
+  "footer": {
+    "madeWith": "Made with",
+    "forLearners": "for learners"
   }
 }

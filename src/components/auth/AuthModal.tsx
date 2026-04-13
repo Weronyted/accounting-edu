@@ -142,7 +142,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Display name"
+                    placeholder={t('auth.displayName')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -195,7 +195,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 onClick={() => setMode('main')}
                 className="w-full text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors py-1"
               >
-                ← Back
+                {t('auth.backShort')}
               </button>
             </motion.form>
           )}

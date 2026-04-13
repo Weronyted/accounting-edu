@@ -99,6 +99,11 @@
     "transaction": "Tranzaksiya",
     "account": "Hisob nomi",
     "answerReview": "Javoblarni ko'rib chiqish",
+    "yourAnswer": "Sizning javobingiz:",
+    "correctAnswer": "To'g'ri javob:",
+    "accountPlaceholder": "Hisob...",
+    "selectPlaceholder": "Tanlang...",
+    "businessLabel": "Kompaniya:",
     "categories": {
       "asset": "Aktiv",
       "liability": "Majburiyat",
@@ -170,7 +175,8 @@
     "date": "Sana",
     "attempts": "Urinishlar",
     "language": "Til",
-    "theme": "Mavzu"
+    "theme": "Mavzu",
+    "languageLabel": "Til"
   },
   "auth": {
     "signInTitle": "AccountingEdu'ga kiring",
@@ -188,7 +194,9 @@
     "guestNote": "Mehmon taraqqiyoti mahalliy saqlanadi va brauzer tozalanganda yo'qoladi.",
     "requiredTitle": "Davom etish uchun kiring",
     "requiredSubtitle": "Darslar, testlar va taraqqiyotni kuzatish uchun bepul hisob yarating.",
-    "back": "← Bosh sahifaga"
+    "back": "← Bosh sahifaga",
+    "backShort": "← Orqaga",
+    "displayName": "Ism"
   },
   "errors": {
     "notFound": "Sahifa topilmadi",
@@ -211,5 +219,9 @@
     "of": "dan",
     "by": "bo'yicha",
     "home": "Bosh sahifa"
+  },
+  "footer": {
+    "madeWith": "Sevgi bilan yaratilgan",
+    "forLearners": "o'quvchilar uchun"
   }
 }
