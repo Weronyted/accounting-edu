@@ -3,6 +3,7 @@ import {
   BookPlus, Pencil, Trash2, Eye, EyeOff, Loader2, X, Check,
   PlusCircle, Image as ImageIcon, HelpCircle, AlignLeft,
 } from 'lucide-react'
+import { RichEditor } from '@/components/ui/RichEditor'
 import {
   listDynamicLessons,
   createDynamicLesson,
@@ -314,20 +315,12 @@ export function LessonsTab() {
 
           {/* ── Content tab ──────────────────────────────────────────────── */}
           {activeSection === 'content' && (
-            <div>
-              <p className="text-xs text-slate-400 mb-2">
-                Write in <strong>Markdown</strong>. Use{' '}
-                <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">![alt](url)</code>{' '}
-                to embed images inline.
-              </p>
-              <textarea
-                rows={16}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-                value={form.content}
-                onChange={(e) => setForm((f) => f && { ...f, content: e.target.value })}
-                placeholder={`## Introduction\n\nWrite lesson content here...\n\n### Key Concepts\n\n- Item 1\n- Item 2\n\n![Diagram](https://example.com/diagram.png)`}
-              />
-            </div>
+            <RichEditor
+              content={form.content}
+              onChange={(html) => setForm((f) => f && { ...f, content: html })}
+              lessonId={editId ?? undefined}
+              placeholder="Start writing your lesson… Use the toolbar to add headings, images, tables and more."
+            />
           )}
 
           {/* ── Media tab ────────────────────────────────────────────────── */}
@@ -354,32 +347,11 @@ export function LessonsTab() {
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                  How to add images inside lesson content:
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Inline images
                 </p>
-                <code className="text-xs text-slate-700 dark:text-slate-300 block bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                  {`![Image description](https://your-image-url.com/image.png)`}
-                </code>
-                <p className="text-xs text-slate-400 mt-2">
-                  Tip: Upload your image to{' '}
-                  <a
-                    href="https://imgbb.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary dark:text-primary-dark hover:underline"
-                  >
-                    imgbb.com
-                  </a>{' '}
-                  or{' '}
-                  <a
-                    href="https://imgur.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary dark:text-primary-dark hover:underline"
-                  >
-                    imgur.com
-                  </a>{' '}
-                  and paste the direct link.
+                <p className="text-xs text-slate-400">
+                  Use the <strong>image button</strong> in the Content editor toolbar to upload images directly from your computer — no external links needed. You can also drag &amp; drop images into the editor.
                 </p>
               </div>
             </div>

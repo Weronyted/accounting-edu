@@ -19,12 +19,39 @@
 }
 
 @layer utilities {
-  .font-700 {
-    font-weight: 700;
-  }
-  .font-600 {
-    font-weight: 600;
-  }
+  .font-700 { font-weight: 700; }
+  .font-600 { font-weight: 600; }
+}
+
+/* ── TipTap rich editor styles ─────────────────────────────────────────────── */
+.prose-editor h1 { @apply text-2xl font-bold font-heading text-slate-900 dark:text-white mt-6 mb-3; }
+.prose-editor h2 { @apply text-xl font-semibold font-heading text-slate-900 dark:text-white mt-5 mb-2; }
+.prose-editor h3 { @apply text-lg font-semibold font-heading text-slate-800 dark:text-slate-200 mt-4 mb-2; }
+.prose-editor p  { @apply text-slate-700 dark:text-slate-300 leading-relaxed mb-3; }
+.prose-editor ul { @apply list-disc list-inside space-y-1 mb-3 text-slate-700 dark:text-slate-300; }
+.prose-editor ol { @apply list-decimal list-inside space-y-1 mb-3 text-slate-700 dark:text-slate-300; }
+.prose-editor li { @apply leading-relaxed; }
+.prose-editor strong { @apply font-semibold text-slate-900 dark:text-white; }
+.prose-editor em    { @apply italic; }
+.prose-editor s     { @apply line-through; }
+.prose-editor blockquote { @apply border-l-4 border-primary dark:border-primary-dark pl-4 my-4 text-slate-500 dark:text-slate-400 italic; }
+.prose-editor hr { @apply border-slate-200 dark:border-slate-700 my-5; }
+.prose-editor code { @apply bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono; }
+.prose-editor pre  { @apply bg-slate-800 dark:bg-slate-900 text-slate-200 rounded-xl p-4 overflow-x-auto my-4; }
+.prose-editor pre code { @apply bg-transparent p-0; }
+.prose-editor a    { @apply text-primary dark:text-primary-dark underline; }
+.prose-editor img  { @apply rounded-xl w-full object-cover my-4 border border-slate-200 dark:border-slate-700; }
+
+/* Table */
+.prose-editor table { @apply w-full border-collapse text-sm my-4; }
+.prose-editor th { @apply px-3 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-left border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300; }
+.prose-editor td { @apply px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300; }
+.prose-editor .selectedCell { @apply bg-primary/10 dark:bg-primary-dark/10; }
+
+/* Placeholder */
+.prose-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-slate-400 dark:text-slate-500 float-left pointer-events-none h-0;
 }
 
 /* Shimmer border animation */

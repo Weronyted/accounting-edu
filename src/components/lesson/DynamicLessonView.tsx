@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
+import DOMPurify from 'dompurify'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, XCircle, BookOpen, ChevronRight } from 'lucide-react'
 import confetti from 'canvas-confetti'
@@ -8,97 +8,26 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import type { DynamicLesson, LessonQuizQuestion } from '@/types/roles'
 
-// ─── Markdown renderer ────────────────────────────────────────────────────────
+// ─── Safe HTML renderer ───────────────────────────────────────────────────────
 
-function LessonMarkdown({ content }: { content: string }) {
+function SafeHTML({ html }: { html: string }) {
+  const clean = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'h1','h2','h3','h4','h5','h6',
+      'p','br','strong','em','s','u','code','pre','blockquote','hr',
+      'ul','ol','li',
+      'a','img',
+      'table','thead','tbody','tr','th','td',
+      'figure','figcaption','div','span',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','class','target','rel','style','colspan','rowspan'],
+  })
+
   return (
-    <ReactMarkdown
-      components={{
-        h1: ({ children }) => (
-          <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 first:mt-0">
-            {children}
-          </h1>
-        ),
-        h2: ({ children }) => (
-          <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white mt-7 mb-3">
-            {children}
-          </h2>
-        ),
-        h3: ({ children }) => (
-          <h3 className="font-heading text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2">
-            {children}
-          </h3>
-        ),
-        p: ({ children }) => (
-          <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">{children}</p>
-        ),
-        ul: ({ children }) => (
-          <ul className="list-disc list-inside space-y-1 mb-4 text-slate-700 dark:text-slate-300">
-            {children}
-          </ul>
-        ),
-        ol: ({ children }) => (
-          <ol className="list-decimal list-inside space-y-1 mb-4 text-slate-700 dark:text-slate-300">
-            {children}
-          </ol>
-        ),
-        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-        strong: ({ children }) => (
-          <strong className="font-semibold text-slate-900 dark:text-white">{children}</strong>
-        ),
-        em: ({ children }) => (
-          <em className="italic text-slate-600 dark:text-slate-400">{children}</em>
-        ),
-        blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-primary dark:border-primary-dark pl-4 my-4 text-slate-600 dark:text-slate-400 italic">
-            {children}
-          </blockquote>
-        ),
-        code: ({ children, className }) => {
-          const isBlock = className?.includes('language-')
-          return isBlock ? (
-            <pre className="bg-slate-800 dark:bg-slate-900 text-slate-200 rounded-xl p-4 overflow-x-auto my-4">
-              <code>{children}</code>
-            </pre>
-          ) : (
-            <code className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono">
-              {children}
-            </code>
-          )
-        },
-        img: ({ src, alt }) => (
-          <figure className="my-6">
-            <img
-              src={src}
-              alt={alt ?? ''}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 object-cover"
-              loading="lazy"
-            />
-            {alt && (
-              <figcaption className="text-xs text-center text-slate-400 mt-2">{alt}</figcaption>
-            )}
-          </figure>
-        ),
-        table: ({ children }) => (
-          <div className="overflow-x-auto my-4">
-            <table className="w-full text-sm border-collapse">{children}</table>
-          </div>
-        ),
-        th: ({ children }) => (
-          <th className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            {children}
-          </th>
-        ),
-        td: ({ children }) => (
-          <td className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-            {children}
-          </td>
-        ),
-        hr: () => <hr className="border-slate-200 dark:border-slate-700 my-6" />,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+    <div
+      className="prose-editor"
+      dangerouslySetInnerHTML={{ __html: clean }}
+    />
   )
 }
 
@@ -186,21 +115,12 @@ function LessonQuiz({ questions }: { questions: LessonQuizQuestion[] }) {
               )
             })}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setAnswers({}); setSubmitted(false) }}
-            >
+            <Button variant="outline" size="sm" onClick={() => { setAnswers({}); setSubmitted(false) }}>
               Try Again
             </Button>
           </motion.div>
         ) : (
-          <motion.div
-            key="quiz"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-5"
-          >
+          <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
             {questions.map((q, i) => (
               <Card key={q.id}>
                 <p className="font-medium text-slate-800 dark:text-slate-200 mb-3">
@@ -253,7 +173,6 @@ function LessonQuiz({ questions }: { questions: LessonQuizQuestion[] }) {
 export function DynamicLessonView({ lesson }: { lesson: DynamicLesson }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Cover image */}
       {lesson.coverImageUrl && (
         <img
           src={lesson.coverImageUrl}
@@ -262,7 +181,6 @@ export function DynamicLessonView({ lesson }: { lesson: DynamicLesson }) {
         />
       )}
 
-      {/* Title */}
       <div className="mb-8">
         <Badge variant="default" className="mb-3">Lesson</Badge>
         <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-2">
@@ -273,12 +191,8 @@ export function DynamicLessonView({ lesson }: { lesson: DynamicLesson }) {
         )}
       </div>
 
-      {/* Content */}
-      <article className="prose-like">
-        <LessonMarkdown content={lesson.content} />
-      </article>
+      <SafeHTML html={lesson.content} />
 
-      {/* Lesson quiz */}
       {lesson.quiz && lesson.quiz.length > 0 && (
         <LessonQuiz questions={lesson.quiz} />
       )}
