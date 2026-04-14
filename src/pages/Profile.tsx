@@ -259,50 +259,47 @@ export function Profile() {
     <PageTransition>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Profile header */}
-        <div className="flex items-center gap-4 mb-6">
-          <UserAvatar user={user} size={56} />
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white">
+        <div className="flex items-center gap-3 mb-6 min-w-0">
+          <UserAvatar user={user} size={48} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-heading text-xl font-semibold text-slate-900 dark:text-white truncate">
                 {user.displayName}
               </h1>
               {role && (
                 <Badge
                   variant={
-                    role === 'owner'
-                      ? 'danger'
-                      : role === 'admin'
-                      ? 'warning'
-                      : role === 'teacher'
-                      ? 'success'
-                      : 'default'
+                    role === 'owner' ? 'danger'
+                    : role === 'admin' ? 'warning'
+                    : role === 'teacher' ? 'success'
+                    : 'default'
                   }
                 >
                   {ROLE_LABELS[role] ?? role}
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
           </div>
           {isAdmin() && (
             <Link
               to="/admin"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary-dark/10 text-primary dark:text-primary-dark text-sm font-medium hover:bg-primary/20 dark:hover:bg-primary-dark/20 transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 dark:bg-primary-dark/10 text-primary dark:text-primary-dark text-xs font-medium hover:bg-primary/20 transition-colors"
             >
-              <ShieldCheck size={14} /> Admin Panel
+              <ShieldCheck size={13} /> <span className="hidden sm:inline">Admin Panel</span><span className="sm:hidden">Admin</span>
             </Link>
           )}
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6 w-fit">
+        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6 w-full sm:w-fit">
           {tabs
             .filter((t) => t.show)
             .map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`relative flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === id
                     ? 'text-slate-900 dark:text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
@@ -317,7 +314,7 @@ export function Profile() {
                 )}
                 <span className="relative flex items-center gap-2">
                   <Icon size={14} />
-                  {label}
+                  <span className="hidden sm:inline">{label}</span>
                 </span>
               </button>
             ))}
