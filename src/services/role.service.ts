@@ -7,6 +7,7 @@ import {
   getDocs,
   serverTimestamp,
 } from 'firebase/firestore'
+// updateDoc is used by setUserRole below
 import { db } from './firebase'
 import type { UserRole, UserRoleRecord } from '@/types/roles'
 
@@ -26,9 +27,10 @@ export async function getUserRole(uid: string): Promise<UserRole> {
 }
 
 /**
- * Create or update the userRoles record for a user.
- * Called on every sign-in to keep displayName/email up-to-date.
- * Only updates `role` if the existing role is NOT already set (preserves admin/teacher).
+ * Ensures the userRoles record exists for a new user (role = student).
+ * For existing users — only reads and returns the current role.
+ * Does NOT update displayName/email to avoid Firestore permission errors
+ * for non-admin users.
  */
 export async function ensureUserRole(
   uid: string,
@@ -41,16 +43,12 @@ export async function ensureUserRole(
   const snap = await getDoc(ref)
 
   if (!snap.exists()) {
-    await setDoc(ref, {
-      role: 'student',
-      displayName,
-      email,
-    })
+    // First sign-in: create the record with default role
+    await setDoc(ref, { role: 'student', displayName, email })
     return 'student'
   }
 
-  // Update display info but keep existing role
-  await updateDoc(ref, { displayName, email })
+  // Existing user: just return the stored role (no update needed)
   return (snap.data() as UserRoleRecord).role
 }
 
