@@ -135,9 +135,9 @@ export const useProgressStore = create<ProgressStore>()(
             merged[slug] = {
               ...local,
               ...fp,
-              quizScore: Math.max(local.quizScore, fp.quizScore),
-              quizAttempts: Math.max(local.quizAttempts, fp.quizAttempts),
-              bookmarks: Array.from(new Set([...local.bookmarks, ...fp.bookmarks])),
+              quizScore: Math.max(local.quizScore ?? 0, fp.quizScore ?? 0),
+              quizAttempts: Math.max(local.quizAttempts ?? 0, fp.quizAttempts ?? 0),
+              bookmarks: Array.from(new Set([...(local.bookmarks ?? []), ...(fp.bookmarks ?? [])])),
             }
           }
         }

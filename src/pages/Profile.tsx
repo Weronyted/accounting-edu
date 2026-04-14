@@ -147,7 +147,7 @@ export function Profile() {
   }
 
   const bookmarkedSections = Object.entries(progress).flatMap(([slug, p]) =>
-    p.bookmarks.map((sectionId) => ({
+    (p.bookmarks ?? []).map((sectionId) => ({
       slug,
       sectionId,
       topicTitle: LESSON_META[slug]?.title ?? slug,
@@ -155,8 +155,8 @@ export function Profile() {
   )
 
   const quizHistory = Object.entries(progress)
-    .filter(([, p]) => p.quizAttempts > 0)
-    .sort(([, a], [, b]) => b.lastVisited - a.lastVisited)
+    .filter(([, p]) => (p.quizAttempts ?? 0) > 0)
+    .sort(([, a], [, b]) => (b.lastVisited ?? 0) - (a.lastVisited ?? 0))
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; show: boolean }[] = [
     { id: 'overview', label: 'Overview', icon: User, show: true },
