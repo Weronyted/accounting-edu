@@ -318,7 +318,6 @@ export function LessonsTab() {
             <RichEditor
               content={form.content}
               onChange={(html) => setForm((f) => f && { ...f, content: html })}
-              lessonId={editId ?? undefined}
               placeholder="Start writing your lesson… Use the toolbar to add headings, images, tables and more."
             />
           )}

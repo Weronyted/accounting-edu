@@ -6,22 +6,18 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
-import { useRef, useCallback } from 'react'
-import { uploadLessonImage } from '@/services/storage.service'
 import {
   Bold, Italic, UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3,
   List, ListOrdered, Quote, Minus,
   AlignLeft, AlignCenter, AlignRight,
-  Link2, ImageIcon, Table2, Loader2,
+  Link2, ImageIcon, Table2,
   Undo, Redo,
 } from 'lucide-react'
-import { useState } from 'react'
 
 interface RichEditorProps {
   content: string
   onChange: (html: string) => void
-  lessonId?: string
   placeholder?: string
 }
 
@@ -63,11 +59,7 @@ function Divider() {
 
 // ─── Main Editor ──────────────────────────────────────────────────────────────
 
-export function RichEditor({ content, onChange, lessonId, placeholder }: RichEditorProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-
+export function RichEditor({ content, onChange, placeholder }: RichEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -94,41 +86,11 @@ export function RichEditor({ content, onChange, lessonId, placeholder }: RichEdi
     },
   })
 
-  const handleImageUpload = useCallback(
-    async (file: File) => {
-      if (!editor) return
-      const id = lessonId ?? 'temp-' + Date.now()
-      setUploading(true)
-      setUploadProgress(0)
-      try {
-        const url = await uploadLessonImage(id, file, setUploadProgress)
-        editor.chain().focus().setImage({ src: url, alt: file.name }).run()
-      } catch {
-        alert('Failed to upload image. Check your Firebase Storage settings.')
-      } finally {
-        setUploading(false)
-        setUploadProgress(0)
-      }
-    },
-    [editor, lessonId]
-  )
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleImageUpload(file)
-    e.target.value = ''
+  const insertImage = () => {
+    const url = window.prompt('Image URL:')
+    if (!url) return
+    editor?.chain().focus().setImage({ src: url, alt: '' }).run()
   }
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      const file = e.dataTransfer.files?.[0]
-      if (file && file.type.startsWith('image/')) {
-        e.preventDefault()
-        handleImageUpload(file)
-      }
-    },
-    [handleImageUpload]
-  )
 
   const setLink = () => {
     const prev = editor?.getAttributes('link').href ?? ''
@@ -146,8 +108,6 @@ export function RichEditor({ content, onChange, lessonId, placeholder }: RichEdi
   return (
     <div
       className="border border-slate-300 dark:border-slate-600 rounded-xl overflow-hidden bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-primary/30"
-      onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
     >
       {/* ── Toolbar ──────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
@@ -225,13 +185,9 @@ export function RichEditor({ content, onChange, lessonId, placeholder }: RichEdi
           <Link2 size={15} />
         </ToolBtn>
 
-        {/* Image upload */}
-        <ToolBtn
-          title="Upload image"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImageIcon size={15} />}
+        {/* Image URL */}
+        <ToolBtn title="Insert image (URL)" onClick={insertImage}>
+          <ImageIcon size={15} />
         </ToolBtn>
 
         {/* Table */}
@@ -246,32 +202,8 @@ export function RichEditor({ content, onChange, lessonId, placeholder }: RichEdi
         </ToolBtn>
       </div>
 
-      {/* ── Upload progress bar ───────────────────────────────────────── */}
-      {uploading && (
-        <div className="h-1 bg-slate-100 dark:bg-slate-800">
-          <div
-            className="h-full bg-primary dark:bg-primary-dark transition-all duration-200"
-            style={{ width: `${uploadProgress}%` }}
-          />
-        </div>
-      )}
-
       {/* ── Editor area ──────────────────────────────────────────────── */}
       <EditorContent editor={editor} />
-
-      {/* ── Drag-drop hint ───────────────────────────────────────────── */}
-      <div className="px-5 py-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 flex items-center gap-1.5">
-        <ImageIcon size={11} />
-        Drag &amp; drop an image anywhere into the editor, or click the image button in the toolbar.
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileInput}
-      />
     </div>
   )
 }
