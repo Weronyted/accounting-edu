@@ -37,6 +37,7 @@ import {
   type ClassroomAssignmentInput,
 } from '@/services/classroom.service'
 import { createAssignment, listAssignments } from '@/services/admin.service'
+import { toast } from '@/store/useToastStore'
 import { getMySubmissions } from '@/services/submission.service'
 import { getUserClassId, getClassGroup, listTeacherClasses } from '@/services/class.service'
 import type { ClassroomCourse, AssignmentSubmission, Assignment, ClassGroup } from '@/types/roles'
@@ -190,7 +191,7 @@ export function Profile() {
       const { token } = await connectGoogleClassroom()
       setClassroomToken(token)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to connect')
+      toast.error(err instanceof Error ? err.message : 'Failed to connect')
     } finally {
       setClassroomLoading(false)
     }

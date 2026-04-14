@@ -10,6 +10,8 @@ import {
   deleteAssignment,
 } from '@/services/admin.service'
 import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from '@/store/useToastStore'
+import { confirm } from '@/store/useConfirmStore'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -333,13 +335,20 @@ export function AssignmentsTab() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this assignment permanently?')) return
+  async function handleDelete(id: string, title: string) {
+    const ok = await confirm({
+      title: 'Delete assignment',
+      message: `"${title}" will be permanently deleted.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteAssignment(id)
       setAssignments((prev) => prev.filter((a) => a.id !== id))
+      toast.success('Assignment deleted.')
     } catch {
-      setError('Failed to delete assignment')
+      toast.error('Failed to delete assignment.')
     }
   }
 
@@ -558,7 +567,7 @@ export function AssignmentsTab() {
                   <Pencil size={15} />
                 </button>
                 <button
-                  onClick={() => handleDelete(a.id)}
+                  onClick={() => handleDelete(a.id, a.title)}
                   title="Delete"
                   className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 transition-colors"
                 >

@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from '@/store/useToastStore'
+import { confirm } from '@/store/useConfirmStore'
 import { getAssignment, submitAssignment, getMySubmission } from '@/services/submission.service'
 import type { Assignment, AssignmentSubmission } from '@/types/roles'
 import { LESSON_META } from '@/lessons'
@@ -180,8 +182,13 @@ export function TakeAssignment() {
     if (!assignment || !user || !id) return
     const questions = assignment.questions ?? []
     const unanswered = questions.filter((q) => !answers[q.id])
-    if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) unanswered. Submit anyway?`)) {
-      return
+    if (unanswered.length > 0) {
+      const ok = await confirm({
+        title: 'Unanswered questions',
+        message: `${unanswered.length} question(s) left unanswered. Submit anyway?`,
+        confirmLabel: 'Submit anyway',
+      })
+      if (!ok) return
     }
     setSubmitting(true)
     try {
@@ -191,7 +198,7 @@ export function TakeAssignment() {
         confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } })
       }
     } catch {
-      alert('Failed to submit. Please try again.')
+      toast.error('Failed to submit. Please try again.')
     } finally {
       setSubmitting(false)
     }

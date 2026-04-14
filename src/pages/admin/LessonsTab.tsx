@@ -11,6 +11,8 @@ import {
   deleteDynamicLesson,
 } from '@/services/admin.service'
 import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from '@/store/useToastStore'
+import { confirm } from '@/store/useConfirmStore'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -204,13 +206,20 @@ export function LessonsTab() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this lesson permanently?')) return
+  async function handleDelete(id: string, title: string) {
+    const ok = await confirm({
+      title: 'Delete lesson',
+      message: `"${title}" will be permanently deleted.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteDynamicLesson(id)
       setLessons((prev) => prev.filter((l) => l.id !== id))
+      toast.success('Lesson deleted.')
     } catch {
-      setError('Failed to delete lesson')
+      toast.error('Failed to delete lesson.')
     }
   }
 
@@ -220,8 +229,9 @@ export function LessonsTab() {
       setLessons((prev) =>
         prev.map((l) => (l.id === lesson.id ? { ...l, published: !l.published } : l))
       )
+      toast.success(lesson.published ? 'Lesson unpublished.' : 'Lesson published.')
     } catch {
-      setError('Failed to update lesson')
+      toast.error('Failed to update lesson.')
     }
   }
 
@@ -464,7 +474,7 @@ export function LessonsTab() {
                   <Pencil size={15} />
                 </button>
                 <button
-                  onClick={() => handleDelete(l.id)}
+                  onClick={() => handleDelete(l.id, l.title)}
                   title="Delete"
                   className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 transition-colors"
                 >

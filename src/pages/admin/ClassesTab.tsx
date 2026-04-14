@@ -14,6 +14,8 @@ import {
   removeClassMember,
 } from '@/services/class.service'
 import { useAuthStore } from '@/store/useAuthStore'
+import { toast } from '@/store/useToastStore'
+import { confirm } from '@/store/useConfirmStore'
 import type { ClassGroup, ClassMember } from '@/types/roles'
 
 export function ClassesTab() {
@@ -25,7 +27,6 @@ export function ClassesTab() {
   const [newName, setNewName] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -40,39 +41,54 @@ export function ClassesTab() {
         )
         setMembers(mems)
       })
-      .catch(() => setError('Failed to load classes'))
+      .catch(() => toast.error('Failed to load classes.'))
       .finally(() => setLoading(false))
   }, [user])
 
   async function handleCreate() {
     if (!user || !newName.trim()) return
     setCreating(true)
-    setError('')
     try {
       const cls = await createClassGroup(newName.trim(), user.uid, user.displayName ?? '')
       setClasses((prev) => [cls, ...prev])
       setMembers((prev) => ({ ...prev, [cls.id]: [] }))
       setNewName('')
       setShowForm(false)
+      toast.success(`Class "${cls.name}" created.`)
     } catch {
-      setError('Failed to create class')
+      toast.error('Failed to create class.')
     } finally {
       setCreating(false)
     }
   }
 
-  async function handleDelete(classId: string) {
-    if (!confirm('Delete this class? Students will lose access.')) return
+  async function handleDelete(classId: string, className: string) {
+    const ok = await confirm({
+      title: 'Delete class',
+      message: `"${className}" will be deleted. Students will lose access.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     await deleteClassGroup(classId)
     setClasses((prev) => prev.filter((c) => c.id !== classId))
+    toast.success('Class deleted.')
   }
 
-  async function handleRemoveMember(classId: string, uid: string) {
+  async function handleRemoveMember(classId: string, uid: string, name: string) {
+    const ok = await confirm({
+      title: 'Remove student',
+      message: `Remove ${name} from this class?`,
+      confirmLabel: 'Remove',
+      danger: true,
+    })
+    if (!ok) return
     await removeClassMember(classId, uid)
     setMembers((prev) => ({
       ...prev,
       [classId]: (prev[classId] ?? []).filter((m) => m.uid !== uid),
     }))
+    toast.success(`${name} removed from class.`)
   }
 
   function copyLink(cls: ClassGroup) {
@@ -101,11 +117,7 @@ export function ClassesTab() {
         </Button>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
-          {error}
-        </p>
-      )}
+
 
       {showForm && (
         <Card className="space-y-3">
@@ -170,7 +182,7 @@ export function ClassesTab() {
                     <ExternalLink size={12} /> Open
                   </Link>
                   <button
-                    onClick={() => handleDelete(cls.id)}
+                    onClick={() => handleDelete(cls.id, cls.name)}
                     className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <Trash2 size={14} />
@@ -192,7 +204,7 @@ export function ClassesTab() {
                         <span className="text-xs text-slate-400 ml-2">{m.email}</span>
                       </div>
                       <button
-                        onClick={() => handleRemoveMember(cls.id, m.uid)}
+                        onClick={() => handleRemoveMember(cls.id, m.uid, m.displayName)}
                         className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                         title="Remove student"
                       >

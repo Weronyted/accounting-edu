@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sun, Moon, Search, Menu, X, BookOpen, LayoutDashboard,
-  BookMarked, User, LogOut, ShieldCheck
+  BookMarked, User, LogOut, ShieldCheck, ClipboardList
 } from 'lucide-react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -27,7 +27,8 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const navLinks = [
-    { href: '/lessons/intro-to-accounting', label: t('nav.lessons'), icon: BookOpen },
+    { href: '/lessons', label: 'Lessons', icon: BookOpen },
+    { href: '/assignments', label: 'Assignments', icon: ClipboardList },
     { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { href: '/glossary', label: t('nav.glossary'), icon: BookMarked },
   ]
