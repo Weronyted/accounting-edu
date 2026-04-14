@@ -88,15 +88,16 @@ export function Profile() {
   // Load class info on mount
   useEffect(() => {
     if (!user) return
-    // Student: find their class
-    getUserClassId(user.uid).then((cid) => {
-      if (cid) getClassGroup(cid).then(setMyClass)
-    })
-    // Teacher: load their created classes
+    getUserClassId(user.uid)
+      .then((cid) => { if (cid) return getClassGroup(cid) })
+      .then((cls) => { if (cls) setMyClass(cls) })
+      .catch(() => {})
     if (isTeacher()) {
-      listTeacherClasses(user.uid).then(setTeacherClasses)
+      listTeacherClasses(user.uid)
+        .then(setTeacherClasses)
+        .catch(() => {})
     }
-  }, [user])
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load assignment history when assignments tab opens
   useEffect(() => {
@@ -105,19 +106,24 @@ export function Profile() {
     Promise.all([
       getMySubmissions(user.uid),
       listAssignments(),
-    ]).then(([subs, assigns]) => {
-      setMySubmissions(subs)
-      const map: Record<string, Assignment> = {}
-      assigns.forEach((a) => { map[a.id] = a })
-      setAssignmentMap(map)
-    }).finally(() => setHistoryLoading(false))
+    ])
+      .then(([subs, assigns]) => {
+        setMySubmissions(subs)
+        const map: Record<string, Assignment> = {}
+        assigns.forEach((a) => { map[a.id] = a })
+        setAssignmentMap(map)
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false))
   }, [user, activeTab])
 
   // Load classroom token on mount (teacher only)
   useEffect(() => {
     if (!user || !isTeacher()) return
-    getClassroomToken(user.uid).then(setClassroomToken)
-  }, [user, isTeacher])
+    getClassroomToken(user.uid)
+      .then(setClassroomToken)
+      .catch(() => {})
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load courses when token is available and tab active
   useEffect(() => {
