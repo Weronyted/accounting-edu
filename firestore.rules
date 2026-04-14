@@ -101,6 +101,44 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // ─── Class Groups ────────────────────────────────────────────────────────
+    // Teachers create classes; students can read classes they belong to.
+
+    match /classGroups/{classId} {
+      allow read: if isAuth() && (
+        resource.data.teacherId == request.auth.uid
+        || exists(/databases/$(database)/documents/classGroups/$(classId)/members/$(request.auth.uid))
+        || isAdmin()
+      );
+      allow list: if isTeacher() || isAdmin();
+      allow create: if isTeacher()
+        && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid);
+
+      match /members/{memberId} {
+        // Any authenticated user can join (create their own member doc)
+        allow create: if isAuth() && request.auth.uid == memberId;
+        // Members can read the member list of their class; teacher and admin too
+        allow read, list: if isAuth() && (
+          request.auth.uid == memberId
+          || get(/databases/$(database)/documents/classGroups/$(classId)).data.teacherId == request.auth.uid
+          || exists(/databases/$(database)/documents/classGroups/$(classId)/members/$(request.auth.uid))
+          || isAdmin()
+        );
+        allow delete: if isAdmin()
+          || get(/databases/$(database)/documents/classGroups/$(classId)).data.teacherId == request.auth.uid;
+      }
+    }
+
+    // ─── User → Class mapping ────────────────────────────────────────────────
+    // Each student stores which class they belong to.
+
+    match /userClasses/{uid} {
+      allow read, write: if isAuth() && request.auth.uid == uid;
+      allow read: if isAdmin();
+    }
+
     // ─── Deny everything else ────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

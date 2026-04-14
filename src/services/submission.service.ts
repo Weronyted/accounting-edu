@@ -1,11 +1,13 @@
 import {
   collection,
+  collectionGroup,
   doc,
   addDoc,
   getDoc,
   getDocs,
   query,
   where,
+  orderBy,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -99,6 +101,21 @@ export async function getAssignment(id: string): Promise<Assignment | null> {
 export async function listSubmissions(assignmentId: string): Promise<AssignmentSubmission[]> {
   const snap = await getDocs(
     collection(db, 'assignments', assignmentId, 'submissions')
+  )
+  return snap.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as Omit<AssignmentSubmission, 'id'>),
+  }))
+}
+
+/** Get all submissions made by a student across all assignments. */
+export async function getMySubmissions(userId: string): Promise<AssignmentSubmission[]> {
+  const snap = await getDocs(
+    query(
+      collectionGroup(db, 'submissions'),
+      where('userId', '==', userId),
+      orderBy('submittedAt', 'desc')
+    )
   )
   return snap.docs.map((d) => ({
     id: d.id,

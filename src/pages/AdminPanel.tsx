@@ -1,19 +1,21 @@
 import { useState } from 'react'
-import { ShieldCheck, Users, BookOpen, ClipboardList } from 'lucide-react'
+import { ShieldCheck, Users, BookOpen, ClipboardList, GraduationCap } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { UsersTab } from './admin/UsersTab'
 import { LessonsTab } from './admin/LessonsTab'
 import { AssignmentsTab } from './admin/AssignmentsTab'
+import { ClassesTab } from './admin/ClassesTab'
 import { useRoleStore } from '@/store/useRoleStore'
 
-type Tab = 'users' | 'lessons' | 'assignments'
+type Tab = 'users' | 'lessons' | 'assignments' | 'classes'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'lessons', label: 'Lessons', icon: BookOpen },
   { id: 'assignments', label: 'Assignments', icon: ClipboardList },
+  { id: 'classes', label: 'Classes', icon: GraduationCap },
 ]
 
 export function AdminPanel() {
@@ -76,6 +78,7 @@ export function AdminPanel() {
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'lessons' && <LessonsTab />}
             {activeTab === 'assignments' && <AssignmentsTab />}
+            {activeTab === 'classes' && <ClassesTab />}
           </motion.div>
         </div>
       </PageTransition>

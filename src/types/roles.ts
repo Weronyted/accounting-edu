@@ -93,3 +93,21 @@ export interface ClassroomCourse {
   name: string
   section?: string
 }
+
+// ─── Class Groups (internal classes) ─────────────────────────────────────────
+
+export interface ClassGroup {
+  id: string
+  name: string
+  teacherId: string
+  teacherName: string
+  inviteCode: string
+  createdAt: number
+}
+
+export interface ClassMember {
+  uid: string
+  displayName: string
+  email: string
+  joinedAt: number
+}

@@ -11,6 +11,9 @@ import {
   Unlink,
   Link2,
   ShieldCheck,
+  ClipboardList,
+  Trophy,
+  Users,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
@@ -33,10 +36,12 @@ import {
   createClassroomAssignment,
   type ClassroomAssignmentInput,
 } from '@/services/classroom.service'
-import { createAssignment } from '@/services/admin.service'
-import type { ClassroomCourse } from '@/types/roles'
+import { createAssignment, listAssignments } from '@/services/admin.service'
+import { getMySubmissions } from '@/services/submission.service'
+import { getUserClassId, getClassGroup } from '@/services/class.service'
+import type { ClassroomCourse, AssignmentSubmission, Assignment, ClassGroup } from '@/types/roles'
 
-type Tab = 'overview' | 'settings' | 'classroom'
+type Tab = 'overview' | 'assignments' | 'settings' | 'classroom'
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -50,6 +55,12 @@ export function Profile() {
   const { role, isTeacher, isAdmin } = useRoleStore()
   const { progress } = useProgressStore()
   const [activeTab, setActiveTab] = useState<Tab>('overview')
+
+  // ─── Assignment history state ─────────────────────────────────────────────────
+  const [mySubmissions, setMySubmissions] = useState<AssignmentSubmission[]>([])
+  const [assignmentMap, setAssignmentMap] = useState<Record<string, Assignment>>({})
+  const [myClass, setMyClass] = useState<ClassGroup | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   // ─── Settings state ──────────────────────────────────────────────────────────
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
@@ -71,6 +82,23 @@ export function Profile() {
   }>({ title: '', description: '', courseId: '', dueDate: '' })
   const [assignSaving, setAssignSaving] = useState(false)
   const [assignMsg, setAssignMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  // Load assignment history when tab opens
+  useEffect(() => {
+    if (!user || activeTab !== 'assignments' || mySubmissions.length > 0) return
+    setHistoryLoading(true)
+    Promise.all([
+      getMySubmissions(user.uid),
+      listAssignments(),
+      getUserClassId(user.uid).then((cid) => cid ? getClassGroup(cid) : null),
+    ]).then(([subs, assigns, cls]) => {
+      setMySubmissions(subs)
+      const map: Record<string, Assignment> = {}
+      assigns.forEach((a) => { map[a.id] = a })
+      setAssignmentMap(map)
+      setMyClass(cls)
+    }).finally(() => setHistoryLoading(false))
+  }, [user, activeTab])
 
   // Load classroom token on mount (teacher only)
   useEffect(() => {
@@ -113,6 +141,7 @@ export function Profile() {
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; show: boolean }[] = [
     { id: 'overview', label: 'Overview', icon: User, show: true },
+    { id: 'assignments', label: 'Assignments', icon: ClipboardList, show: true },
     { id: 'settings', label: 'Settings', icon: Settings, show: true },
     { id: 'classroom', label: 'Google Classroom', icon: GraduationCap, show: isTeacher() },
   ]
@@ -345,6 +374,95 @@ export function Profile() {
                       {topicTitle} › {sectionId.replace(/-/g, ' ')}
                     </Link>
                   ))}
+                </div>
+              )}
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Assignments history ─────────────────────────────────────────────── */}
+        {activeTab === 'assignments' && (
+          <motion.div
+            key="assignments"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
+            {/* Class info */}
+            {myClass && (
+              <Card>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users size={16} className="text-primary dark:text-primary-dark" />
+                    <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
+                      My Class
+                    </h3>
+                  </div>
+                  <Link
+                    to={`/class/${myClass.id}`}
+                    className="text-xs text-primary dark:text-primary-dark hover:underline"
+                  >
+                    Open class →
+                  </Link>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{myClass.name}</p>
+                <p className="text-xs text-slate-400">Teacher: {myClass.teacherName}</p>
+              </Card>
+            )}
+
+            {/* Submission history */}
+            <Card>
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy size={16} className="text-primary dark:text-primary-dark" />
+                <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
+                  Assignment Results
+                </h3>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-slate-400" />
+                </div>
+              ) : mySubmissions.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  No assignments submitted yet.{' '}
+                  <Link
+                    to="/assignments"
+                    className="text-primary dark:text-primary-dark hover:underline"
+                  >
+                    Browse assignments
+                  </Link>
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {mySubmissions.map((sub) => {
+                    const assign = assignmentMap[sub.assignmentId]
+                    const pct = sub.percentage
+                    const color =
+                      pct >= 80
+                        ? 'text-green-600 dark:text-green-400'
+                        : pct >= 60
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-red-500 dark:text-red-400'
+                    return (
+                      <div
+                        key={sub.id}
+                        className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                            {assign?.title ?? sub.assignmentId}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {sub.score}/{sub.maxScore} pts ·{' '}
+                            {new Date(sub.submittedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`text-lg font-bold ${color}`}>{pct}%</span>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </Card>
