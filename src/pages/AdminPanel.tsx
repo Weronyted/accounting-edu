@@ -42,12 +42,12 @@ export function AdminPanel() {
           </div>
 
           {/* Tab bar */}
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6 w-fit">
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6 w-full sm:w-fit">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`relative flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === id
                     ? 'text-slate-900 dark:text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
@@ -62,7 +62,7 @@ export function AdminPanel() {
                 )}
                 <span className="relative flex items-center gap-2">
                   <Icon size={15} />
-                  {label}
+                  <span className="hidden sm:inline">{label}</span>
                 </span>
               </button>
             ))}
