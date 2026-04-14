@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './firebase'
+import { ensureUserRole } from './role.service'
 
 const googleProvider = new GoogleAuthProvider()
 
@@ -59,4 +60,7 @@ async function ensureUserProfile(user: User): Promise<void> {
       theme: localStorage.getItem('theme') ?? 'light',
     })
   }
+
+  // Ensure the user has a role record (idempotent)
+  await ensureUserRole(user.uid, user.displayName ?? '', user.email ?? '')
 }

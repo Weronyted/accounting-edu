@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sun, Moon, Search, Menu, X, BookOpen, LayoutDashboard,
-  BookMarked, User, LogOut
+  BookMarked, User, LogOut, ShieldCheck
 } from 'lucide-react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useRoleStore } from '@/store/useRoleStore'
 import { signOut } from '@/services/auth.service'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 
@@ -21,6 +22,7 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
   const location = useLocation()
   const { theme, toggleTheme } = useThemeStore()
   const { user } = useAuthStore()
+  const { isAdmin } = useRoleStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -120,6 +122,15 @@ export function Navbar({ onSearchOpen, onSignInOpen }: NavbarProps) {
                       >
                         <User size={14} /> {t('nav.profile')}
                       </Link>
+                      {isAdmin() && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-primary dark:text-primary-dark hover:bg-primary/5 dark:hover:bg-primary-dark/10 transition-colors"
+                        >
+                          <ShieldCheck size={14} /> Admin Panel
+                        </Link>
+                      )}
                       <button
                         onClick={handleSignOut}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

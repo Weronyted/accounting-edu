@@ -10,6 +10,7 @@ import { Dashboard } from '@/pages/Dashboard'
 import { LessonPage } from '@/pages/LessonPage'
 import { Glossary } from '@/pages/Glossary'
 import { Profile } from '@/pages/Profile'
+import { AdminPanel } from '@/pages/AdminPanel'
 import { NotFound } from '@/pages/NotFound'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="/lessons/:slug" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
         <Route path="/glossary" element={<ProtectedRoute><Glossary /></ProtectedRoute>} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
