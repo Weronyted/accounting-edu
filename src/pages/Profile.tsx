@@ -38,7 +38,7 @@ import {
 } from '@/services/classroom.service'
 import { createAssignment, listAssignments } from '@/services/admin.service'
 import { getMySubmissions } from '@/services/submission.service'
-import { getUserClassId, getClassGroup } from '@/services/class.service'
+import { getUserClassId, getClassGroup, listTeacherClasses } from '@/services/class.service'
 import type { ClassroomCourse, AssignmentSubmission, Assignment, ClassGroup } from '@/types/roles'
 
 type Tab = 'overview' | 'assignments' | 'settings' | 'classroom'
@@ -60,6 +60,7 @@ export function Profile() {
   const [mySubmissions, setMySubmissions] = useState<AssignmentSubmission[]>([])
   const [assignmentMap, setAssignmentMap] = useState<Record<string, Assignment>>({})
   const [myClass, setMyClass] = useState<ClassGroup | null>(null)
+  const [teacherClasses, setTeacherClasses] = useState<ClassGroup[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
   // ─── Settings state ──────────────────────────────────────────────────────────
@@ -83,20 +84,31 @@ export function Profile() {
   const [assignSaving, setAssignSaving] = useState(false)
   const [assignMsg, setAssignMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  // Load assignment history when tab opens
+  // Load class info on mount
+  useEffect(() => {
+    if (!user) return
+    // Student: find their class
+    getUserClassId(user.uid).then((cid) => {
+      if (cid) getClassGroup(cid).then(setMyClass)
+    })
+    // Teacher: load their created classes
+    if (isTeacher()) {
+      listTeacherClasses(user.uid).then(setTeacherClasses)
+    }
+  }, [user])
+
+  // Load assignment history when assignments tab opens
   useEffect(() => {
     if (!user || activeTab !== 'assignments' || mySubmissions.length > 0) return
     setHistoryLoading(true)
     Promise.all([
       getMySubmissions(user.uid),
       listAssignments(),
-      getUserClassId(user.uid).then((cid) => cid ? getClassGroup(cid) : null),
-    ]).then(([subs, assigns, cls]) => {
+    ]).then(([subs, assigns]) => {
       setMySubmissions(subs)
       const map: Record<string, Assignment> = {}
       assigns.forEach((a) => { map[a.id] = a })
       setAssignmentMap(map)
-      setMyClass(cls)
     }).finally(() => setHistoryLoading(false))
   }, [user, activeTab])
 
@@ -313,6 +325,56 @@ export function Profile() {
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
+            {/* My class (student) */}
+            {myClass && (
+              <Card>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Users size={16} className="text-primary dark:text-primary-dark" />
+                    <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
+                      My Class
+                    </h3>
+                  </div>
+                  <Link
+                    to={`/class/${myClass.id}`}
+                    className="text-xs text-primary dark:text-primary-dark hover:underline font-medium"
+                  >
+                    Open →
+                  </Link>
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{myClass.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Teacher: {myClass.teacherName}</p>
+              </Card>
+            )}
+
+            {/* Teacher's classes */}
+            {isTeacher() && teacherClasses.length > 0 && (
+              <Card>
+                <div className="flex items-center gap-2 mb-3">
+                  <Users size={16} className="text-primary dark:text-primary-dark" />
+                  <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
+                    My Classes
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {teacherClasses.map((cls) => (
+                    <Link
+                      key={cls.id}
+                      to={`/class/${cls.id}`}
+                      className="flex items-center justify-between py-2 px-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-primary/30 dark:hover:border-primary-dark/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group"
+                    >
+                      <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                        {cls.name}
+                      </span>
+                      <span className="text-xs text-primary dark:text-primary-dark opacity-0 group-hover:opacity-100 transition-opacity">
+                        Open →
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+            )}
+
             {/* Quiz history */}
             <Card>
               <div className="flex items-center gap-2 mb-4">
@@ -389,28 +451,6 @@ export function Profile() {
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
-            {/* Class info */}
-            {myClass && (
-              <Card>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users size={16} className="text-primary dark:text-primary-dark" />
-                    <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
-                      My Class
-                    </h3>
-                  </div>
-                  <Link
-                    to={`/class/${myClass.id}`}
-                    className="text-xs text-primary dark:text-primary-dark hover:underline"
-                  >
-                    Open class →
-                  </Link>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{myClass.name}</p>
-                <p className="text-xs text-slate-400">Teacher: {myClass.teacherName}</p>
-              </Card>
-            )}
-
             {/* Submission history */}
             <Card>
               <div className="flex items-center gap-2 mb-4">

@@ -8,7 +8,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { ClassGroup, ClassMember } from '@/types/roles'
@@ -53,9 +52,10 @@ export async function getClassGroupByCode(code: string): Promise<ClassGroup | nu
 
 export async function listTeacherClasses(teacherId: string): Promise<ClassGroup[]> {
   const snap = await getDocs(
-    query(collection(db, 'classGroups'), where('teacherId', '==', teacherId), orderBy('createdAt', 'desc'))
+    query(collection(db, 'classGroups'), where('teacherId', '==', teacherId))
   )
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClassGroup, 'id'>) }))
+  const results = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClassGroup, 'id'>) }))
+  return results.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export async function deleteClassGroup(classId: string): Promise<void> {
