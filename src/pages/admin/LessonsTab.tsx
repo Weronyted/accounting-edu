@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { BookPlus, Pencil, Trash2, Eye, EyeOff, Loader2, X, Check } from 'lucide-react'
+import {
+  BookPlus, Pencil, Trash2, Eye, EyeOff, Loader2, X, Check,
+  PlusCircle, Image as ImageIcon, HelpCircle, AlignLeft,
+} from 'lucide-react'
 import {
   listDynamicLessons,
   createDynamicLesson,
@@ -10,25 +13,112 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import type { DynamicLesson } from '@/types/roles'
+import type { DynamicLesson, LessonQuizQuestion } from '@/types/roles'
 
-const EMPTY: Omit<DynamicLesson, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName'> =
-  {
-    title: '',
-    slug: '',
-    description: '',
-    content: '',
-    published: false,
+// ─── Empty templates ──────────────────────────────────────────────────────────
+
+function emptyQuizQuestion(): LessonQuizQuestion {
+  return {
+    id: crypto.randomUUID(),
+    text: '',
+    options: ['', '', '', ''],
+    correctIndex: 0,
   }
+}
+
+type FormState = {
+  title: string
+  slug: string
+  description: string
+  coverImageUrl: string
+  content: string
+  quiz: LessonQuizQuestion[]
+  published: boolean
+}
+
+const EMPTY_FORM: FormState = {
+  title: '',
+  slug: '',
+  description: '',
+  coverImageUrl: '',
+  content: '',
+  quiz: [],
+  published: false,
+}
+
+// ─── Quiz Question Editor ─────────────────────────────────────────────────────
+
+function QuizQuestionEditor({
+  q,
+  index,
+  onChange,
+  onDelete,
+}: {
+  q: LessonQuizQuestion
+  index: number
+  onChange: (updated: LessonQuizQuestion) => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Quiz Question {index + 1}
+        </span>
+        <button onClick={onDelete} className="p-1 text-red-400 hover:text-red-600">
+          <Trash2 size={13} />
+        </button>
+      </div>
+
+      <textarea
+        rows={2}
+        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+        value={q.text}
+        onChange={(e) => onChange({ ...q, text: e.target.value })}
+        placeholder="Question text…"
+      />
+
+      <div className="space-y-2">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Options — select the correct one
+        </p>
+        {q.options.map((opt, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name={`quiz-correct-${q.id}`}
+              checked={q.correctIndex === i}
+              onChange={() => onChange({ ...q, correctIndex: i })}
+              className="text-primary focus:ring-primary/30 shrink-0"
+            />
+            <input
+              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={opt}
+              onChange={(e) => {
+                const opts = [...q.options] as [string, string, string, string]
+                opts[i] = e.target.value
+                onChange({ ...q, options: opts })
+              }}
+              placeholder={`Option ${i + 1}`}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Tab ─────────────────────────────────────────────────────────────────
 
 export function LessonsTab() {
   const { user } = useAuthStore()
   const [lessons, setLessons] = useState<DynamicLesson[]>([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState<typeof EMPTY | null>(null)
+  const [form, setForm] = useState<FormState | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [activeSection, setActiveSection] = useState<'content' | 'media' | 'quiz'>('content')
 
   useEffect(() => {
     listDynamicLessons()
@@ -39,7 +129,8 @@ export function LessonsTab() {
 
   function openCreate() {
     setEditId(null)
-    setForm({ ...EMPTY })
+    setForm({ ...EMPTY_FORM, quiz: [] })
+    setActiveSection('content')
   }
 
   function openEdit(lesson: DynamicLesson) {
@@ -48,9 +139,12 @@ export function LessonsTab() {
       title: lesson.title,
       slug: lesson.slug,
       description: lesson.description,
+      coverImageUrl: lesson.coverImageUrl ?? '',
       content: lesson.content,
+      quiz: lesson.quiz ? [...lesson.quiz] : [],
       published: lesson.published,
     })
+    setActiveSection('content')
   }
 
   function closeForm() {
@@ -68,19 +162,31 @@ export function LessonsTab() {
     setSaving(true)
     setError('')
     try {
+      const data = {
+        title: form.title,
+        slug: form.slug,
+        description: form.description,
+        coverImageUrl: form.coverImageUrl || undefined,
+        content: form.content,
+        quiz: form.quiz.length > 0 ? form.quiz : undefined,
+        published: form.published,
+      }
+
       if (editId) {
-        await updateDynamicLesson(editId, form)
+        await updateDynamicLesson(editId, data)
         setLessons((prev) =>
           prev.map((l) =>
-            l.id === editId ? { ...l, ...form, updatedAt: Date.now() } : l
+            l.id === editId ? { ...l, ...data, updatedAt: Date.now() } : l
           )
         )
       } else {
-        const id = await createDynamicLesson(form, user.uid, user.displayName ?? '')
+        const id = await createDynamicLesson(data, user.uid, user.displayName ?? '')
         setLessons((prev) => [
           {
             id,
-            ...form,
+            ...data,
+            coverImageUrl: data.coverImageUrl,
+            quiz: data.quiz,
             createdBy: user.uid,
             createdByName: user.displayName ?? '',
             createdAt: Date.now(),
@@ -118,6 +224,12 @@ export function LessonsTab() {
     }
   }
 
+  const sectionTabs = [
+    { id: 'content' as const, label: 'Content', icon: AlignLeft },
+    { id: 'media' as const, label: 'Images & Cover', icon: ImageIcon },
+    { id: 'quiz' as const, label: `Quiz (${form?.quiz.length ?? 0})`, icon: HelpCircle },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -136,12 +248,14 @@ export function LessonsTab() {
         </p>
       )}
 
-      {/* Form */}
+      {/* ── Form ─────────────────────────────────────────────────────────── */}
       {form !== null && (
-        <Card className="border-2 border-primary/30 dark:border-primary-dark/30">
-          <h3 className="font-heading font-semibold text-slate-900 dark:text-white mb-4">
+        <Card className="border-2 border-primary/30 dark:border-primary-dark/30 space-y-4">
+          <h3 className="font-heading font-semibold text-slate-900 dark:text-white">
             {editId ? 'Edit Lesson' : 'New Lesson'}
           </h3>
+
+          {/* Title + slug */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
@@ -169,41 +283,161 @@ export function LessonsTab() {
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Description
+                Short Description
               </label>
               <input
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={form.description}
                 onChange={(e) => setForm((f) => f && { ...f, description: e.target.value })}
-                placeholder="A short description shown on the dashboard"
+                placeholder="Shown on the dashboard card"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Content (Markdown)
-              </label>
+          </div>
+
+          {/* Section tabs */}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+            {sectionTabs.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveSection(id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  activeSection === id
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Icon size={13} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Content tab ──────────────────────────────────────────────── */}
+          {activeSection === 'content' && (
+            <div>
+              <p className="text-xs text-slate-400 mb-2">
+                Write in <strong>Markdown</strong>. Use{' '}
+                <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">![alt](url)</code>{' '}
+                to embed images inline.
+              </p>
               <textarea
-                rows={10}
+                rows={16}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
                 value={form.content}
                 onChange={(e) => setForm((f) => f && { ...f, content: e.target.value })}
-                placeholder="## Introduction&#10;&#10;Write your lesson content in Markdown..."
+                placeholder={`## Introduction\n\nWrite lesson content here...\n\n### Key Concepts\n\n- Item 1\n- Item 2\n\n![Diagram](https://example.com/diagram.png)`}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="pub-check"
-                type="checkbox"
-                checked={form.published}
-                onChange={(e) => setForm((f) => f && { ...f, published: e.target.checked })}
-                className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30"
-              />
-              <label htmlFor="pub-check" className="text-sm text-slate-700 dark:text-slate-300">
-                Publish immediately
-              </label>
+          )}
+
+          {/* ── Media tab ────────────────────────────────────────────────── */}
+          {activeSection === 'media' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Cover Image URL (shown at top of lesson)
+                </label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  value={form.coverImageUrl}
+                  onChange={(e) => setForm((f) => f && { ...f, coverImageUrl: e.target.value })}
+                  placeholder="https://example.com/cover.jpg"
+                />
+                {form.coverImageUrl && (
+                  <img
+                    src={form.coverImageUrl}
+                    alt="Cover preview"
+                    className="mt-2 rounded-lg h-32 w-full object-cover border border-slate-200 dark:border-slate-700"
+                    onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                  />
+                )}
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                  How to add images inside lesson content:
+                </p>
+                <code className="text-xs text-slate-700 dark:text-slate-300 block bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  {`![Image description](https://your-image-url.com/image.png)`}
+                </code>
+                <p className="text-xs text-slate-400 mt-2">
+                  Tip: Upload your image to{' '}
+                  <a
+                    href="https://imgbb.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary dark:text-primary-dark hover:underline"
+                  >
+                    imgbb.com
+                  </a>{' '}
+                  or{' '}
+                  <a
+                    href="https://imgur.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary dark:text-primary-dark hover:underline"
+                  >
+                    imgur.com
+                  </a>{' '}
+                  and paste the direct link.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 mt-4">
+          )}
+
+          {/* ── Quiz tab ─────────────────────────────────────────────────── */}
+          {activeSection === 'quiz' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Quiz shown at the end of the lesson
+                </p>
+                <button
+                  onClick={() =>
+                    setForm((f) => f && { ...f, quiz: [...f.quiz, emptyQuizQuestion()] })
+                  }
+                  className="flex items-center gap-1.5 text-xs text-primary dark:text-primary-dark hover:underline"
+                >
+                  <PlusCircle size={12} /> Add question
+                </button>
+              </div>
+
+              {form.quiz.length === 0 ? (
+                <p className="text-xs text-slate-400 py-4 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                  No quiz questions yet. Click <strong>Add question</strong> above.
+                </p>
+              ) : (
+                form.quiz.map((q, i) => (
+                  <QuizQuestionEditor
+                    key={q.id}
+                    q={q}
+                    index={i}
+                    onChange={(updated) =>
+                      setForm((f) =>
+                        f && { ...f, quiz: f.quiz.map((x) => (x.id === q.id ? updated : x)) }
+                      )
+                    }
+                    onDelete={() =>
+                      setForm((f) => f && { ...f, quiz: f.quiz.filter((x) => x.id !== q.id) })
+                    }
+                  />
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Publish + actions */}
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+            <input
+              id="pub-check"
+              type="checkbox"
+              checked={form.published}
+              onChange={(e) => setForm((f) => f && { ...f, published: e.target.checked })}
+              className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30"
+            />
+            <label htmlFor="pub-check" className="text-sm text-slate-700 dark:text-slate-300 flex-1">
+              Publish (visible to students)
+            </label>
             <Button size="sm" onClick={handleSave} loading={saving}>
               <Check size={14} /> Save
             </Button>
@@ -214,7 +448,7 @@ export function LessonsTab() {
         </Card>
       )}
 
-      {/* List */}
+      {/* ── List ─────────────────────────────────────────────────────────── */}
       {loading ? (
         <div className="flex justify-center py-10">
           <Loader2 size={24} className="animate-spin text-slate-400" />
@@ -222,7 +456,7 @@ export function LessonsTab() {
       ) : lessons.length === 0 ? (
         <Card>
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
-            No dynamic lessons yet. Click <strong>+ New Lesson</strong> to create one.
+            No lessons yet. Click <strong>+ New Lesson</strong> to create one.
           </p>
         </Card>
       ) : (
@@ -237,6 +471,9 @@ export function LessonsTab() {
                   <Badge variant={l.published ? 'success' : 'default'}>
                     {l.published ? 'Published' : 'Draft'}
                   </Badge>
+                  {l.quiz && l.quiz.length > 0 && (
+                    <Badge variant="default">{l.quiz.length} quiz questions</Badge>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">/{l.slug}</p>
               </div>

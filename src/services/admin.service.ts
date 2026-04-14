@@ -5,9 +5,11 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  getDoc,
   serverTimestamp,
   query,
   orderBy,
+  where,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { DynamicLesson, Assignment } from '@/types/roles'
@@ -19,6 +21,15 @@ export async function listDynamicLessons(): Promise<DynamicLesson[]> {
     query(collection(db, 'dynamicLessons'), orderBy('createdAt', 'desc'))
   )
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DynamicLesson, 'id'>) }))
+}
+
+export async function getDynamicLessonBySlug(slug: string): Promise<DynamicLesson | null> {
+  const snap = await getDocs(
+    query(collection(db, 'dynamicLessons'), where('slug', '==', slug), where('published', '==', true))
+  )
+  if (snap.empty) return null
+  const d = snap.docs[0]
+  return { id: d.id, ...(d.data() as Omit<DynamicLesson, 'id'>) }
 }
 
 export async function createDynamicLesson(

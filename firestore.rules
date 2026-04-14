@@ -81,6 +81,16 @@ service cloud.firestore {
         && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isAdmin()
         || (isTeacher() && resource.data.teacherId == request.auth.uid);
+
+      // Student submissions — students write their own, teachers/admins read all
+      match /submissions/{submissionId} {
+        allow create: if isAuth()
+          && request.resource.data.userId == request.auth.uid;
+        allow read: if isAuth() && (
+          resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
+        );
+        allow list: if isTeacher() || isAdmin();
+      }
     }
 
     // ─── Teacher Profiles ────────────────────────────────────────────────────

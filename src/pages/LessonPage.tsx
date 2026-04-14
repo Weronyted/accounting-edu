@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getDynamicLessonBySlug } from '@/services/admin.service'
+import { DynamicLessonView } from '@/components/lesson/DynamicLessonView'
+import type { DynamicLesson } from '@/types/roles'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Menu, Clock, BookOpen, CheckCircle2, Circle } from 'lucide-react'
@@ -567,6 +570,7 @@ export function LessonPage() {
   const navigate = useNavigate()
   const [mobileContentsOpen, setMobileContentsOpen] = useState(false)
   const [lessonSwitcherOpen, setLessonSwitcherOpen] = useState(false)
+  const [dynamicLesson, setDynamicLesson] = useState<DynamicLesson | null | undefined>(undefined)
   const timeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
 
@@ -577,15 +581,44 @@ export function LessonPage() {
 
   const { progress, markVisited, toggleBookmark, bestScore, allProgress } = useProgress(slug ?? '')
 
+  // Fetch dynamic lesson if slug not in static set
   useEffect(() => {
-    if (!slug || !lesson) {
-      navigate('/lessons/intro-to-accounting')
+    if (!slug) return
+    if (LESSONS[slug]) {
+      setDynamicLesson(null) // static lesson, no need to fetch
       return
     }
+    setDynamicLesson(undefined) // loading
+    getDynamicLessonBySlug(slug).then(setDynamicLesson)
+  }, [slug])
+
+  useEffect(() => {
+    if (!slug || !lesson) return
     markVisited(slug)
     timeRef.current = setInterval(() => { secondsRef.current += 5 }, 5000)
     return () => { if (timeRef.current) clearInterval(timeRef.current) }
   }, [slug])
+
+  // Show dynamic lesson
+  if (slug && !LESSONS[slug]) {
+    if (dynamicLesson === undefined) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-slate-500">{t('common.loading')}</p>
+        </div>
+      )
+    }
+    if (dynamicLesson) {
+      return (
+        <PageTransition>
+          <DynamicLessonView lesson={dynamicLesson} />
+        </PageTransition>
+      )
+    }
+    // dynamic lesson not found, fall through to redirect
+    navigate('/lessons/intro-to-accounting')
+    return null
+  }
 
   if (!lesson) {
     return (

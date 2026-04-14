@@ -11,6 +11,7 @@ import { LessonPage } from '@/pages/LessonPage'
 import { Glossary } from '@/pages/Glossary'
 import { Profile } from '@/pages/Profile'
 import { AdminPanel } from '@/pages/AdminPanel'
+import { TakeAssignment } from '@/pages/TakeAssignment'
 import { NotFound } from '@/pages/NotFound'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route path="/glossary" element={<ProtectedRoute><Glossary /></ProtectedRoute>} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/assignments/:id" element={<ProtectedRoute><TakeAssignment /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
