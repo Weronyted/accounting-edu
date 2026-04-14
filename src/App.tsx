@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import { Routes, Route } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -18,21 +17,17 @@ import { useAuth } from '@/hooks/useAuth'
 import { useKeyboard } from '@/hooks/useKeyboard'
 
 function AppRoutes() {
-  const location = useLocation()
-
   return (
-    <AnimatePresence mode="sync">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/lessons/:slug" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-        <Route path="/glossary" element={<ProtectedRoute><Glossary /></ProtectedRoute>} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/assignments/:id" element={<ProtectedRoute><TakeAssignment /></ProtectedRoute>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/lessons/:slug" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+      <Route path="/glossary" element={<ProtectedRoute><Glossary /></ProtectedRoute>} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/assignments/:id" element={<ProtectedRoute><TakeAssignment /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   )
 }
 
