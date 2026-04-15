@@ -39,8 +39,11 @@ service cloud.firestore {
         && request.resource.data.role == 'student';
 
       // Owner can set any role; admins can only set teacher / student
+      // Users can update only their own displayName (not role)
       allow update: if isOwner()
-        || (isAdmin() && request.resource.data.role in ['teacher', 'student']);
+        || (isAdmin() && request.resource.data.role in ['teacher', 'student'])
+        || (isAuth() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']));
     }
 
     // ─── Private user data ───────────────────────────────────────────────────

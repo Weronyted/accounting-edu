@@ -53,6 +53,18 @@ export async function ensureUserRole(
 }
 
 /**
+ * Update displayName in userRoles so the admin panel stays in sync.
+ * Users can update only their own record.
+ */
+export async function updateUserDisplayName(uid: string, displayName: string): Promise<void> {
+  const ref = doc(db, 'userRoles', uid)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    await updateDoc(ref, { displayName })
+  }
+}
+
+/**
  * Assign a role to a user. Caller must be owner or admin.
  * Owner can set any role; admins can only set teacher or student.
  */

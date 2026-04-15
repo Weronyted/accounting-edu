@@ -37,6 +37,7 @@ import {
   type ClassroomAssignmentInput,
 } from '@/services/classroom.service'
 import { createAssignment, listAssignments } from '@/services/admin.service'
+import { updateUserDisplayName } from '@/services/role.service'
 import { toast } from '@/store/useToastStore'
 import { getMySubmissions } from '@/services/submission.service'
 import { getUserClassId, getClassGroup, listTeacherClasses } from '@/services/class.service'
@@ -173,6 +174,7 @@ export function Profile() {
     try {
       if (displayName !== user.displayName) {
         await updateProfile(auth.currentUser!, { displayName })
+        await updateUserDisplayName(user.uid, displayName).catch(() => {})
       }
       if (newPassword) {
         if (!currentPassword) throw new Error('Enter your current password to change it')
