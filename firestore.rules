@@ -44,6 +44,9 @@ service cloud.firestore {
         || (isAdmin() && request.resource.data.role in ['teacher', 'student'])
         || (isAuth() && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']));
+
+      // Admins and owner can delete user role records
+      allow delete: if isAdmin() || isOwner();
     }
 
     // ─── Private user data ───────────────────────────────────────────────────

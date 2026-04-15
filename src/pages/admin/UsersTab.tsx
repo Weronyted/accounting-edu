@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { UserCog, Loader2, ChevronDown } from 'lucide-react'
-import { listAllUsers, setUserRole } from '@/services/role.service'
+import { UserCog, Loader2, ChevronDown, Trash2 } from 'lucide-react'
+import { listAllUsers, setUserRole, deleteUserRecord } from '@/services/role.service'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoleStore } from '@/store/useRoleStore'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { confirm } from '@/store/useConfirmStore'
+import { toast } from '@/store/useToastStore'
 import type { UserRole } from '@/types/roles'
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -30,6 +32,7 @@ export function UsersTab() {
   const [users, setUsers] = useState<UserEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -51,6 +54,27 @@ export function UsersTab() {
       setError('Failed to update role')
     } finally {
       setSaving(null)
+    }
+  }
+
+  async function handleDeleteUser(targetUid: string, displayName: string) {
+    const ok = await confirm({
+      title: 'Delete user',
+      message: `Remove "${displayName || 'this user'}" from the panel? This only removes their role record — their Firebase account remains intact.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+
+    setDeleting(targetUid)
+    try {
+      await deleteUserRecord(targetUid)
+      setUsers((prev) => prev.filter((u) => u.uid !== targetUid))
+      toast.success('User removed from panel')
+    } catch {
+      toast.error('Failed to delete user')
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -124,35 +148,51 @@ export function UsersTab() {
                       <Badge variant={ROLE_VARIANT[u.role]}>{ROLE_LABELS[u.role]}</Badge>
                     </td>
                     <td className="px-4 py-3">
-                      {canEdit ? (
-                        saving === u.uid ? (
-                          <Loader2 size={16} className="animate-spin text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        {canEdit ? (
+                          saving === u.uid ? (
+                            <Loader2 size={16} className="animate-spin text-slate-400" />
+                          ) : (
+                            <div className="relative inline-block">
+                              <select
+                                value={u.role}
+                                onChange={(e) =>
+                                  handleRoleChange(u.uid, e.target.value as UserRole)
+                                }
+                                className="appearance-none bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 pr-8 text-sm text-slate-700 dark:text-slate-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              >
+                                {assignableRoles(u.role).map((r) => (
+                                  <option key={r} value={r}>
+                                    {ROLE_LABELS[r]}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown
+                                size={14}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                              />
+                            </div>
+                          )
                         ) : (
-                          <div className="relative inline-block">
-                            <select
-                              value={u.role}
-                              onChange={(e) =>
-                                handleRoleChange(u.uid, e.target.value as UserRole)
-                              }
-                              className="appearance-none bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 pr-8 text-sm text-slate-700 dark:text-slate-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          <span className="text-xs text-slate-400">
+                            {isSelf ? 'Your account' : isTargetOwner ? 'Owner' : '—'}
+                          </span>
+                        )}
+
+                        {!isSelf && !isTargetOwner && (isAdmin() || isOwner()) && (
+                          deleting === u.uid ? (
+                            <Loader2 size={16} className="animate-spin text-slate-400" />
+                          ) : (
+                            <button
+                              onClick={() => handleDeleteUser(u.uid, u.displayName)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Remove user"
                             >
-                              {assignableRoles(u.role).map((r) => (
-                                <option key={r} value={r}>
-                                  {ROLE_LABELS[r]}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown
-                              size={14}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                            />
-                          </div>
-                        )
-                      ) : (
-                        <span className="text-xs text-slate-400">
-                          {isSelf ? 'Your account' : isTargetOwner ? 'Owner' : '—'}
-                        </span>
-                      )}
+                              <Trash2 size={15} />
+                            </button>
+                          )
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

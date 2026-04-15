@@ -81,6 +81,12 @@ export async function setUserRole(
   })
 }
 
+/** Delete a user's role record (removes them from the admin panel list). */
+export async function deleteUserRecord(uid: string): Promise<void> {
+  const { deleteDoc } = await import('firebase/firestore')
+  await deleteDoc(doc(db, 'userRoles', uid))
+}
+
 /** List all users with their roles (admin-only). */
 export async function listAllUsers(): Promise<
   Array<{ uid: string; role: UserRole; displayName: string; email: string }>
