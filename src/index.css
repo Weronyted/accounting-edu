@@ -71,10 +71,10 @@
   animation: shimmerBorder 2s linear infinite;
 }
 
-/* Custom scrollbar — thin, matches dark/light theme */
+/* Custom scrollbar — slim, blue-tinted, fits dark navy theme */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -82,26 +82,31 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3); /* slate-400/30 */
+  background: rgba(99, 125, 199, 0.25);
   border-radius: 99px;
+  transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgba(99, 125, 199, 0.55);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.5); /* slate-600/50 */
+  background: rgba(79, 107, 187, 0.35);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.8); /* slate-500/80 */
+  background: rgba(99, 130, 210, 0.65);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  scrollbar-color: rgba(99, 125, 199, 0.3) transparent;
 }
 
 /* Print styles */
