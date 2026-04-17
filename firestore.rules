@@ -82,7 +82,7 @@ service cloud.firestore {
     match /assignments/{assignmentId} {
       allow read: if isAuth() && (resource.data.published == true || isAdmin()
         || (isTeacher() && resource.data.teacherId == request.auth.uid));
-      allow list: if isTeacher() || isAdmin();
+      allow list: if isAuth();
       allow create: if isTeacher()
         && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isAdmin()
