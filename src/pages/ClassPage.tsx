@@ -5,10 +5,12 @@ import {
   UserCircle2, Copy, Check,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '@/services/firebase'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { getClassGroup, getClassMembers } from '@/services/class.service'
+import { getClassGroup } from '@/services/class.service'
 import { listAssignments } from '@/services/admin.service'
 import { listSubmissions } from '@/services/submission.service'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -36,30 +38,36 @@ export function ClassPage() {
   const [tab, setTab] = useState<Tab>('members')
   const [copied, setCopied] = useState(false)
 
+  // One-time load: class info + assignments + submissions
   useEffect(() => {
-    // Wait for Firebase Auth to initialise before making Firestore requests
     if (!classId || authLoading || !user) return
     setLoading(true)
     Promise.all([
       getClassGroup(classId),
-      getClassMembers(classId),
       listAssignments(),
-    ]).then(async ([group, mems, allAssign]) => {
+    ]).then(async ([group, allAssign]) => {
       if (!group) { setLoading(false); return }
       setCls(group)
-      setMembers(mems)
 
       const published = allAssign.filter((a) => a.published && a.type === 'internal')
       setAssignments(published)
 
-      // Load all submissions for grading view
-      const subs = await Promise.all(
-        published.map((a) => listSubmissions(a.id))
-      )
+      const subs = await Promise.all(published.map((a) => listSubmissions(a.id)))
       setAllSubmissions(subs.flat())
-    }).catch(() => {
-      // Permission denied or network error — cls stays null → "Class not found"
-    }).finally(() => setLoading(false))
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [classId, authLoading, user])
+
+  // Real-time listener for members — updates instantly when someone joins
+  useEffect(() => {
+    if (!classId || authLoading || !user) return
+    const unsub = onSnapshot(
+      collection(db, 'classGroups', classId, 'members'),
+      (snap) => {
+        setMembers(snap.docs.map((d) => d.data() as ClassMember))
+      },
+      () => {} // ignore permission errors silently
+    )
+    return unsub
   }, [classId, authLoading, user])
 
   if (!user) return <Navigate to="/" replace />
