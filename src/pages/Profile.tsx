@@ -86,17 +86,17 @@ export function Profile() {
   const [assignSaving, setAssignSaving] = useState(false)
   const [assignMsg, setAssignMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  // Load class info on mount
+  // Load class info on mount — wait for auth to be ready
   useEffect(() => {
     if (!user) return
     getUserClassId(user.uid)
       .then((cid) => { if (cid) return getClassGroup(cid) })
       .then((cls) => { if (cls) setMyClass(cls) })
-      .catch(() => {})
+      .catch((err) => console.warn('Failed to load class:', err))
     if (isTeacher()) {
       listTeacherClasses(user.uid)
         .then(setTeacherClasses)
-        .catch(() => {})
+        .catch((err) => console.warn('Failed to load teacher classes:', err))
     }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -114,6 +114,8 @@ service cloud.firestore {
       allow read: if isAuth() && (
         resource.data.teacherId == request.auth.uid
         || exists(/databases/$(database)/documents/classGroups/$(classId)/members/$(request.auth.uid))
+        || (exists(/databases/$(database)/documents/userClasses/$(request.auth.uid))
+            && get(/databases/$(database)/documents/userClasses/$(request.auth.uid)).data.classId == classId)
         || isAdmin()
       );
       allow list: if isTeacher() || isAdmin();

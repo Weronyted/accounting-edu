@@ -25,7 +25,7 @@ function scoreColor(pct: number) {
 
 export function ClassPage() {
   const { classId } = useParams<{ classId: string }>()
-  const { user } = useAuthStore()
+  const { user, loading: authLoading } = useAuthStore()
   const { isTeacher } = useRoleStore()
 
   const [cls, setCls] = useState<ClassGroup | null>(null)
@@ -37,7 +37,9 @@ export function ClassPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!classId) return
+    // Wait for Firebase Auth to initialise before making Firestore requests
+    if (!classId || authLoading || !user) return
+    setLoading(true)
     Promise.all([
       getClassGroup(classId),
       getClassMembers(classId),
@@ -55,8 +57,10 @@ export function ClassPage() {
         published.map((a) => listSubmissions(a.id))
       )
       setAllSubmissions(subs.flat())
+    }).catch(() => {
+      // Permission denied or network error — cls stays null → "Class not found"
     }).finally(() => setLoading(false))
-  }, [classId])
+  }, [classId, authLoading, user])
 
   if (!user) return <Navigate to="/" replace />
 
