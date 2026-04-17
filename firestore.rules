@@ -99,6 +99,20 @@ service cloud.firestore {
       }
     }
 
+    // ─── Submissions (collectionGroup) ──────────────────────────────────────
+    // Required for collectionGroup('submissions') queries in student profile.
+    // The nested match above covers single-assignment reads; this covers
+    // cross-collection queries using {path=**} recursive wildcard.
+
+    match /{path=**}/submissions/{submissionId} {
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuth() && (
+        resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
+      );
+      allow list: if isAuth();
+    }
+
     // ─── Teacher Profiles ────────────────────────────────────────────────────
     // Stores Google Classroom access tokens; only visible to the teacher.
 
