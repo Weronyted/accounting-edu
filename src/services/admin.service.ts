@@ -80,10 +80,10 @@ export async function listAssignments(): Promise<Assignment[]> {
 export async function createAssignment(
   data: Omit<Assignment, 'id' | 'createdAt'>
 ): Promise<string> {
-  const ref = await addDoc(collection(db, 'assignments'), {
+  const ref = await addDoc(collection(db, 'assignments'), clean({
     ...data,
     createdAt: serverTimestamp(),
-  })
+  } as Record<string, unknown>))
   return ref.id
 }
 
@@ -91,7 +91,7 @@ export async function updateAssignment(
   id: string,
   data: Partial<Omit<Assignment, 'id' | 'createdAt'>>
 ): Promise<void> {
-  await updateDoc(doc(db, 'assignments', id), data)
+  await updateDoc(doc(db, 'assignments', id), clean(data as Record<string, unknown>))
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
