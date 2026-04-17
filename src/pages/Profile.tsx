@@ -114,7 +114,7 @@ export function Profile() {
         assigns.forEach((a) => { map[a.id] = a })
         setAssignmentMap(map)
       })
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load assignment history:', err))
       .finally(() => setHistoryLoading(false))
   }, [user, activeTab])
 
@@ -502,7 +502,11 @@ export function Profile() {
                           </p>
                           <p className="text-xs text-slate-400">
                             {sub.score}/{sub.maxScore} pts ·{' '}
-                            {new Date(sub.submittedAt).toLocaleDateString()}
+                            {new Date(
+                              typeof sub.submittedAt === 'number'
+                                ? sub.submittedAt
+                                : (sub.submittedAt as any)?.toMillis?.() ?? 0
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                         <span className={`text-lg font-bold ${color}`}>{pct}%</span>

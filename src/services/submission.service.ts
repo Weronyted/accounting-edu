@@ -114,11 +114,16 @@ export async function getMySubmissions(userId: string): Promise<AssignmentSubmis
     query(
       collectionGroup(db, 'submissions'),
       where('userId', '==', userId),
-      orderBy('submittedAt', 'desc')
     )
   )
-  return snap.docs.map((d) => ({
+  const results = snap.docs.map((d) => ({
     id: d.id,
     ...(d.data() as Omit<AssignmentSubmission, 'id'>),
   }))
+  // Sort client-side to avoid requiring a composite Firestore index
+  return results.sort((a, b) => {
+    const ta = typeof a.submittedAt === 'number' ? a.submittedAt : (a.submittedAt as any)?.toMillis?.() ?? 0
+    const tb = typeof b.submittedAt === 'number' ? b.submittedAt : (b.submittedAt as any)?.toMillis?.() ?? 0
+    return tb - ta
+  })
 }
