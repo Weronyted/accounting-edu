@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import {
   Users, ClipboardList, Trophy, Loader2, BookOpen,
-  UserCircle2, Copy, Check,
+  UserCircle2, Copy, Check, Pencil, X,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { collection, onSnapshot } from 'firebase/firestore'
@@ -12,9 +12,10 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { getClassGroup } from '@/services/class.service'
 import { listAssignments } from '@/services/admin.service'
-import { listSubmissions } from '@/services/submission.service'
+import { listSubmissions, updateSubmissionGrade } from '@/services/submission.service'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoleStore } from '@/store/useRoleStore'
+import { toast } from '@/store/useToastStore'
 import type { ClassGroup, ClassMember, Assignment, AssignmentSubmission } from '@/types/roles'
 
 type Tab = 'members' | 'assignments' | 'grades'
@@ -37,6 +38,11 @@ export function ClassPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('members')
   const [copied, setCopied] = useState(false)
+  // Grade editing: key = `${assignmentId}__${userId}`
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editScore, setEditScore] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [savingGrade, setSavingGrade] = useState(false)
 
   // One-time load: class info + assignments + submissions
   useEffect(() => {
@@ -69,6 +75,29 @@ export function ClassPage() {
     )
     return unsub
   }, [classId, authLoading, user])
+
+  async function saveGrade(sub: AssignmentSubmission) {
+    if (!sub.id) return
+    const score = parseInt(editScore, 10)
+    if (isNaN(score) || score < 0) { toast.error('Enter a valid score'); return }
+    setSavingGrade(true)
+    try {
+      await updateSubmissionGrade(sub.assignmentId, sub.id, score, sub.maxScore, user!.uid, editNote)
+      setAllSubmissions((prev) =>
+        prev.map((s) =>
+          s.id === sub.id
+            ? { ...s, score, percentage: sub.maxScore > 0 ? Math.round((score / sub.maxScore) * 100) : 0, manualScore: score, manualNote: editNote }
+            : s
+        )
+      )
+      setEditing(null)
+      toast.success('Grade saved')
+    } catch {
+      toast.error('Failed to save grade')
+    } finally {
+      setSavingGrade(false)
+    }
+  }
 
   if (!user) return <Navigate to="/" replace />
 
@@ -284,14 +313,64 @@ export function ClassPage() {
                             const sub = allSubmissions.find(
                               (s) => s.assignmentId === a.id && s.userId === m.uid
                             )
+                            const editKey = `${a.id}__${m.uid}`
+                            const isEditing = editing === editKey
+
                             return (
-                              <td key={a.id} className="px-4 py-3">
-                                {sub ? (
-                                  <span className={`font-medium ${scoreColor(sub.percentage)}`}>
-                                    {sub.percentage}%
-                                  </span>
+                              <td key={a.id} className="px-3 py-2 min-w-[130px]">
+                                {isEditing ? (
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={sub?.maxScore ?? 100}
+                                      value={editScore}
+                                      onChange={(e) => setEditScore(e.target.value)}
+                                      className="w-14 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                      autoFocus
+                                    />
+                                    <span className="text-xs text-slate-400">/{sub?.maxScore ?? '?'}</span>
+                                    {savingGrade ? (
+                                      <Loader2 size={13} className="animate-spin text-slate-400" />
+                                    ) : (
+                                      <>
+                                        <button onClick={() => sub && saveGrade(sub)} className="p-1 text-green-500 hover:text-green-600">
+                                          <Check size={13} />
+                                        </button>
+                                        <button onClick={() => setEditing(null)} className="p-1 text-slate-400 hover:text-slate-600">
+                                          <X size={13} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
                                 ) : (
-                                  <span className="text-slate-300 dark:text-slate-600">—</span>
+                                  <div className="flex items-center gap-1.5 group">
+                                    {sub ? (
+                                      <>
+                                        <span className={`font-medium ${scoreColor(sub.percentage)}`}>
+                                          {sub.percentage}%
+                                        </span>
+                                        {sub.manualScore !== undefined && (
+                                          <span className="text-xs text-slate-400">(manual)</span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-300 dark:text-slate-600">—</span>
+                                    )}
+                                    {isTeacher() && sub && (
+                                      <button
+                                        onClick={() => {
+                                          setEditing(editKey)
+                                          setEditScore(String(sub.score))
+                                          setEditNote(sub.manualNote ?? '')
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-primary transition-opacity"
+                                        title="Edit grade"
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </td>
                             )

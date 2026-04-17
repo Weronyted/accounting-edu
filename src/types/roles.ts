@@ -34,6 +34,10 @@ export interface AssignmentSubmission {
   maxScore: number
   percentage: number
   submittedAt: number
+  /** Teacher override fields */
+  manualScore?: number
+  manualNote?: string
+  gradedBy?: string
 }
 
 // ─── Assignment ────────────────────────────────────────────────────────────────

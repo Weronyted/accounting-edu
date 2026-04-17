@@ -88,7 +88,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin()
         || (isTeacher() && resource.data.teacherId == request.auth.uid);
 
-      // Student submissions — students write their own, teachers/admins read all
+      // Student submissions — students write their own, teachers/admins read and grade
       match /submissions/{submissionId} {
         allow create: if isAuth()
           && request.resource.data.userId == request.auth.uid;
@@ -96,6 +96,7 @@ service cloud.firestore {
           resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
         );
         allow list: if isAuth();
+        allow update: if isTeacher() || isAdmin();
       }
     }
 

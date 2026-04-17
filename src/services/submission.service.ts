@@ -4,6 +4,7 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  updateDoc,
   query,
   where,
   serverTimestamp,
@@ -93,6 +94,26 @@ export async function getAssignment(id: string): Promise<Assignment | null> {
   const snap = await getDoc(doc(db, 'assignments', id))
   if (!snap.exists()) return null
   return { id: snap.id, ...(snap.data() as Omit<Assignment, 'id'>) }
+}
+
+/** Teacher manually overrides a submission's grade. */
+export async function updateSubmissionGrade(
+  assignmentId: string,
+  submissionId: string,
+  manualScore: number,
+  maxScore: number,
+  gradedBy: string,
+  manualNote?: string,
+): Promise<void> {
+  const manualPercentage = maxScore > 0 ? Math.round((manualScore / maxScore) * 100) : 0
+  await updateDoc(doc(db, 'assignments', assignmentId, 'submissions', submissionId), {
+    manualScore,
+    manualNote: manualNote ?? '',
+    gradedBy,
+    // Override displayed score with manual values
+    score: manualScore,
+    percentage: manualPercentage,
+  })
 }
 
 /** Get all submissions for an assignment (teacher/admin only). */
