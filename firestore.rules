@@ -118,7 +118,7 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/userClasses/$(request.auth.uid)).data.classId == classId)
         || isAdmin()
       );
-      allow list: if isTeacher() || isAdmin();
+      allow list: if true;  // invite links must work for unauthenticated users
       allow create: if isTeacher()
         && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isAdmin()
