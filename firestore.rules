@@ -95,7 +95,7 @@ service cloud.firestore {
         allow read: if isAuth() && (
           resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
         );
-        allow list: if isTeacher() || isAdmin();
+        allow list: if isAuth();
       }
     }
 
