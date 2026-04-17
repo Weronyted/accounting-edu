@@ -1,13 +1,11 @@
 import {
   collection,
-  collectionGroup,
   doc,
   addDoc,
   getDoc,
   getDocs,
   query,
   where,
-  orderBy,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -108,19 +106,30 @@ export async function listSubmissions(assignmentId: string): Promise<AssignmentS
   }))
 }
 
-/** Get all submissions made by a student across all assignments. */
+/** Get all submissions made by a student across all assignments.
+ *  Queries each assignment's subcollection individually to avoid
+ *  needing a collectionGroup index. */
 export async function getMySubmissions(userId: string): Promise<AssignmentSubmission[]> {
-  const snap = await getDocs(
-    query(
-      collectionGroup(db, 'submissions'),
-      where('userId', '==', userId),
+  const assignmentsSnap = await getDocs(collection(db, 'assignments'))
+  const assignmentIds = assignmentsSnap.docs.map((d) => d.id)
+
+  const perAssignment = await Promise.all(
+    assignmentIds.map((assignmentId) =>
+      getDocs(
+        query(
+          collection(db, 'assignments', assignmentId, 'submissions'),
+          where('userId', '==', userId)
+        )
+      ).then((snap) =>
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<AssignmentSubmission, 'id'>),
+        }))
+      )
     )
   )
-  const results = snap.docs.map((d) => ({
-    id: d.id,
-    ...(d.data() as Omit<AssignmentSubmission, 'id'>),
-  }))
-  // Sort client-side to avoid requiring a composite Firestore index
+
+  const results = perAssignment.flat()
   return results.sort((a, b) => {
     const ta = typeof a.submittedAt === 'number' ? a.submittedAt : (a.submittedAt as any)?.toMillis?.() ?? 0
     const tb = typeof b.submittedAt === 'number' ? b.submittedAt : (b.submittedAt as any)?.toMillis?.() ?? 0
