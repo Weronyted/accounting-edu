@@ -32,18 +32,25 @@ export async function getDynamicLessonBySlug(slug: string): Promise<DynamicLesso
   return { id: d.id, ...(d.data() as Omit<DynamicLesson, 'id'>) }
 }
 
+/** Strip undefined values — Firestore rejects them */
+function clean<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as T
+}
+
 export async function createDynamicLesson(
   data: Omit<DynamicLesson, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName'>,
   authorUid: string,
   authorName: string
 ): Promise<string> {
-  const ref = await addDoc(collection(db, 'dynamicLessons'), {
+  const ref = await addDoc(collection(db, 'dynamicLessons'), clean({
     ...data,
     createdBy: authorUid,
     createdByName: authorName,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }))
   return ref.id
 }
 
@@ -51,10 +58,10 @@ export async function updateDynamicLesson(
   id: string,
   data: Partial<Omit<DynamicLesson, 'id' | 'createdAt' | 'createdBy' | 'createdByName'>>
 ): Promise<void> {
-  await updateDoc(doc(db, 'dynamicLessons', id), {
+  await updateDoc(doc(db, 'dynamicLessons', id), clean({
     ...data,
     updatedAt: serverTimestamp(),
-  })
+  } as Record<string, unknown>))
 }
 
 export async function deleteDynamicLesson(id: string): Promise<void> {
