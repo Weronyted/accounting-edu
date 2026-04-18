@@ -19,6 +19,7 @@ import { NotFound } from '@/pages/NotFound'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Toaster } from '@/components/ui/Toaster'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SupportButton } from '@/components/ui/SupportButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useKeyboard } from '@/hooks/useKeyboard'
 
@@ -69,6 +70,7 @@ export default function App() {
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <Toaster />
       <ConfirmDialog />
+      <SupportButton />
     </div>
   )
 }

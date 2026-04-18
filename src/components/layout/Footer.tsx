@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BookOpen, Heart } from 'lucide-react'
+import { BookOpen, Heart, MessageCircle } from 'lucide-react'
 
 export function Footer() {
   const { t } = useTranslation()
@@ -26,6 +26,15 @@ export function Footer() {
             <Link to="/lessons/intro-to-accounting" className="hover:text-primary dark:hover:text-primary-dark transition-colors">
               {t('nav.lessons')}
             </Link>
+            <a
+              href="https://t.me/Weronyted"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary dark:hover:text-primary-dark transition-colors"
+            >
+              <MessageCircle size={14} />
+              Support
+            </a>
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
