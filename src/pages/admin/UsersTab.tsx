@@ -4,7 +4,6 @@ import { listAllUsers, setUserRole, deleteUserRecord } from '@/services/role.ser
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoleStore } from '@/store/useRoleStore'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { confirm } from '@/store/useConfirmStore'
 import { toast } from '@/store/useToastStore'
@@ -28,7 +27,7 @@ type UserEntry = { uid: string; role: UserRole; displayName: string; email: stri
 
 export function UsersTab() {
   const { user } = useAuthStore()
-  const { isOwner, isAdmin, role: myRole } = useRoleStore()
+  const { isOwner, isAdmin } = useRoleStore()
   const [users, setUsers] = useState<UserEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
