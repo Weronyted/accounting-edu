@@ -8,7 +8,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Replace CdeioQnkZPdcUEqVXrkT7BTU0SD2 with your Firebase UID (find it in Firebase Console → Auth)
+    // Replace CdeioQnkZPdcUEqVXrkT7BTU0SD2 with your Firebase UID (Firebase Console → Auth)
     function isOwner() {
       return isAuth() && request.auth.uid == 'CdeioQnkZPdcUEqVXrkT7BTU0SD2';
     }
@@ -29,23 +29,22 @@ service cloud.firestore {
     // Stores { role, displayName, email } for every user.
 
     match /userRoles/{uid} {
-      // Users can read their own role; admins can read all
-      allow get: if isAuth() && (request.auth.uid == uid || isAdmin());
+      allow get:  if isAuth() && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
 
-      // Anyone authenticated can create their own doc (initial sign-up, role = student)
+      // Self-registration: only 'student' is allowed; only whitelisted fields.
       allow create: if isAuth()
         && request.auth.uid == uid
-        && request.resource.data.role == 'student';
+        && request.resource.data.role == 'student'
+        && request.resource.data.keys().hasOnly(['role', 'displayName', 'email', 'createdAt']);
 
-      // Owner can set any role; admins can only set teacher / student
-      // Users can update only their own displayName (not role)
+      // Owner can set any role; admins can promote/demote between teacher/student;
+      // users can update only their own displayName — nothing else.
       allow update: if isOwner()
         || (isAdmin() && request.resource.data.role in ['teacher', 'student'])
         || (isAuth() && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']));
 
-      // Admins and owner can delete user role records
       allow delete: if isAdmin() || isOwner();
     }
 
@@ -68,87 +67,124 @@ service cloud.firestore {
     }
 
     // ─── Dynamic Lessons ─────────────────────────────────────────────────────
-    // Created by admins; visible to all authenticated users once published.
+    // Created by admins; visible to authenticated users once published.
+    // Students may only list/query published lessons (Firestore validates the
+    // query filter, so a bare collection scan without the filter is rejected).
 
     match /dynamicLessons/{lessonId} {
-      allow read: if isAuth() && (resource.data.published == true || isAdmin());
-      allow list: if isAuth();  // filtered client-side by published flag
+      allow get:  if isAuth() && (resource.data.published == true || isAdmin());
+      allow list: if isTeacher()
+        || (isAuth() && resource.data.published == true);
       allow create, update, delete: if isAdmin();
     }
 
     // ─── Assignments ─────────────────────────────────────────────────────────
     // Teachers create assignments; admins manage all.
+    // Students may only list published assignments.
 
     match /assignments/{assignmentId} {
-      allow read: if isAuth() && (resource.data.published == true || isAdmin()
-        || (isTeacher() && resource.data.teacherId == request.auth.uid));
-      allow list: if isAuth();
+      allow get: if isAuth() && (
+        resource.data.published == true
+        || isAdmin()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid)
+      );
+      allow list: if isTeacher()
+        || (isAuth() && resource.data.published == true);
       allow create: if isTeacher()
         && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isAdmin()
         || (isTeacher() && resource.data.teacherId == request.auth.uid);
 
-      // Student submissions — students write their own, teachers/admins read and grade
+      // ── Student submissions ───────────────────────────────────────────────
+      // - Students create their own submission; cannot pre-set grading fields.
+      // - Students can only read/list their own submissions.
+      // - Teachers can update only grading fields; cannot overwrite answers.
+      // - Only admins can delete submissions.
+
       match /submissions/{submissionId} {
         allow create: if isAuth()
-          && request.resource.data.userId == request.auth.uid;
-        allow read: if isAuth() && (
+          && request.resource.data.userId == request.auth.uid
+          && !request.resource.data.keys().hasAny(['manualScore', 'gradedBy', 'feedback']);
+
+        allow get: if isAuth() && (
           resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
         );
-        allow list: if isAuth();
-        allow update: if isTeacher() || isAdmin();
+
+        // resource.data.userId in list context: Firestore validates that the
+        // client query is constrained to userId == request.auth.uid, so a bare
+        // scan (without where filter) is rejected for students.
+        allow list: if isAuth() && (
+          resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
+        );
+
+        // Teachers may only write grading fields; they cannot overwrite the
+        // student's original answers, userId, assignmentId, or score.
+        allow update: if (isTeacher() || isAdmin())
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['manualScore', 'feedback', 'gradedBy', 'gradedAt']);
+
+        allow delete: if isAdmin();
       }
     }
 
     // ─── Submissions (collectionGroup) ──────────────────────────────────────
-    // Required for collectionGroup('submissions') queries in student profile.
-    // The nested match above covers single-assignment reads; this covers
-    // cross-collection queries using {path=**} recursive wildcard.
+    // Needed for collectionGroup('submissions') queries on the student profile
+    // page. Must mirror the per-assignment rules above.
 
     match /{path=**}/submissions/{submissionId} {
       allow create: if isAuth()
-        && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuth() && (
+        && request.resource.data.userId == request.auth.uid
+        && !request.resource.data.keys().hasAny(['manualScore', 'gradedBy', 'feedback']);
+
+      allow get: if isAuth() && (
         resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
       );
-      allow list: if isAuth();
+
+      allow list: if isAuth() && (
+        resource.data.userId == request.auth.uid || isTeacher() || isAdmin()
+      );
     }
 
     // ─── Teacher Profiles ────────────────────────────────────────────────────
-    // Stores Google Classroom access tokens; only visible to the teacher.
+    // Stores Google Classroom OAuth tokens — only visible to the teacher.
+    // Admins may audit the doc (e.g. to revoke access) but the token value
+    // should not be rendered in any admin UI.
 
     match /teacherProfiles/{uid} {
       allow read, write: if isAuth() && request.auth.uid == uid;
-      allow read: if isAdmin();
+      allow get: if isAdmin();
     }
 
     // ─── Class Groups ────────────────────────────────────────────────────────
-    // Teachers create classes; students can read classes they belong to.
+    // Teachers create classes; students join via invite link.
+    // Anyone (including unauthenticated) may GET a specific class by ID so
+    // that invite links work without requiring sign-in first.
+    // Listing all classes is restricted to members, teachers, and admins.
 
     match /classGroups/{classId} {
-      allow read: if isAuth() && (
+      allow get: if true;
+
+      allow list: if isAuth() && (
         resource.data.teacherId == request.auth.uid
         || exists(/databases/$(database)/documents/classGroups/$(classId)/members/$(request.auth.uid))
-        || (exists(/databases/$(database)/documents/userClasses/$(request.auth.uid))
-            && get(/databases/$(database)/documents/userClasses/$(request.auth.uid)).data.classId == classId)
         || isAdmin()
       );
-      allow list: if true;  // invite links must work for unauthenticated users
+
       allow create: if isTeacher()
         && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isAdmin()
         || (isTeacher() && resource.data.teacherId == request.auth.uid);
 
       match /members/{memberId} {
-        // Any authenticated user can join (create their own member doc)
         allow create: if isAuth() && request.auth.uid == memberId;
-        // Members can read the member list of their class; teacher and admin too
+
         allow read, list: if isAuth() && (
           request.auth.uid == memberId
           || get(/databases/$(database)/documents/classGroups/$(classId)).data.teacherId == request.auth.uid
           || exists(/databases/$(database)/documents/classGroups/$(classId)/members/$(request.auth.uid))
           || isAdmin()
         );
+
         allow delete: if isAdmin()
           || get(/databases/$(database)/documents/classGroups/$(classId)).data.teacherId == request.auth.uid;
       }
@@ -159,7 +195,7 @@ service cloud.firestore {
 
     match /userClasses/{uid} {
       allow read, write: if isAuth() && request.auth.uid == uid;
-      allow read: if isAdmin();
+      allow get: if isAdmin();
     }
 
     // ─── Deny everything else ────────────────────────────────────────────────

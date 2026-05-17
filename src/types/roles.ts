@@ -10,7 +10,22 @@ export interface UserRoleRecord {
 
 // ─── Assignment Questions ──────────────────────────────────────────────────────
 
-export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer'
+export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'code_task'
+
+export interface TestCase {
+  id: string
+  description: string
+  /** JS expression evaluated in the sandbox iframe — truthy = passed.
+   *  Has access to: document, getComputedStyle, _logs (array of console.log outputs), _lastLog */
+  check: string
+}
+
+export interface TestCaseResult {
+  id: string
+  description: string
+  passed: boolean
+  error?: string
+}
 
 export interface AssignmentQuestion {
   id: string
@@ -21,6 +36,12 @@ export interface AssignmentQuestion {
   /** MC: option index as string ('0','1'…); TF: 'true'/'false'; SA: expected text (lowercase) */
   correctAnswer: string
   points: number
+  /** code_task: initial code shown in the editor */
+  starterCode?: string
+  /** code_task: which language tab to focus (determines enabledTabs if set) */
+  starterLanguage?: 'html' | 'css' | 'js'
+  /** code_task: test cases run against student code */
+  testCases?: TestCase[]
 }
 
 export interface AssignmentSubmission {
@@ -28,8 +49,10 @@ export interface AssignmentSubmission {
   userId: string
   displayName: string
   assignmentId: string
-  /** questionId → student's answer */
+  /** questionId → student's answer; code_task: JSON.stringify({html,css,js}) */
   answers: Record<string, string>
+  /** code_task only: questionId → test case results */
+  codeResults?: Record<string, TestCaseResult[]>
   score: number
   maxScore: number
   percentage: number
@@ -51,10 +74,7 @@ export interface Assignment {
   teacherId: string
   teacherName: string
   published: boolean
-  type: 'internal' | 'classroom'
-  classroomCourseId?: string
-  classroomCourseName?: string
-  classroomAssignmentId?: string
+  type: 'internal'
   createdAt: number
   /** Questions with auto-grading */
   questions?: AssignmentQuestion[]
@@ -88,14 +108,6 @@ export interface DynamicLesson {
   createdByName: string
   createdAt: number
   updatedAt: number
-}
-
-// ─── Google Classroom ─────────────────────────────────────────────────────────
-
-export interface ClassroomCourse {
-  id: string
-  name: string
-  section?: string
 }
 
 // ─── Class Groups (internal classes) ─────────────────────────────────────────

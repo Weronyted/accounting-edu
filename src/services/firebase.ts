@@ -1,11 +1,12 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { getAuth, type Auth } from 'firebase/auth'
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
+  type Firestore,
 } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+import { getStorage, type FirebaseStorage } from 'firebase/storage'
 import { getAnalytics, isSupported } from 'firebase/analytics'
 
 const firebaseConfig = {
@@ -18,17 +19,32 @@ const firebaseConfig = {
   measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
-const app = initializeApp(firebaseConfig)
-
-export const auth    = getAuth(app)
-export const db      = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-})
-export const storage = getStorage(app)
-
-// Analytics (optional — only if supported)
-export const analytics = isSupported().then((yes) =>
-  yes ? getAnalytics(app) : null
+/** True when all required Firebase env vars are present. When false the app
+ *  runs in guest-only mode backed by localStorage. */
+export const firebaseEnabled = !!(
+  import.meta.env.VITE_FIREBASE_API_KEY &&
+  import.meta.env.VITE_FIREBASE_PROJECT_ID
 )
 
-export default app
+let _auth: Auth | null = null
+let _db: Firestore | null = null
+let _storage: FirebaseStorage | null = null
+
+if (firebaseEnabled) {
+  try {
+    const app = initializeApp(firebaseConfig)
+    _auth    = getAuth(app)
+    _db      = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    })
+    _storage = getStorage(app)
+    // Analytics — optional, only if supported by the browser
+    isSupported().then((yes) => yes && getAnalytics(app)).catch(() => null)
+  } catch (err) {
+    console.warn('[Firebase] Initialization failed:', err)
+  }
+}
+
+export const auth    = _auth    as Auth
+export const db      = _db      as Firestore
+export const storage = _storage as FirebaseStorage

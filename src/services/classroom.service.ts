@@ -1,7 +1,11 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
-import type { ClassroomCourse } from '@/types/roles'
+interface ClassroomCourse {
+  id: string
+  name: string
+  section?: string
+}
 
 const CLASSROOM_SCOPES = [
   'https://www.googleapis.com/auth/classroom.courses.readonly',

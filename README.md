@@ -167,6 +167,87 @@ Set these in Railway Dashboard → Variables:
 7. Bank Reconciliation
 8. Payroll & Salaries
 
+## Security Model
+
+This platform serves minors — every layer applies defence-in-depth.
+
+### Student Code Sandbox
+
+Student JavaScript runs exclusively inside a hidden `<iframe>` with:
+
+```html
+<iframe sandbox="allow-scripts" srcdoc="...">
+```
+
+**Why no `allow-same-origin`?** Without it the sandboxed page runs in a null origin. It cannot read cookies, `localStorage`, IndexedDB, or Firebase tokens from the parent domain — even if the student writes malicious code. This is the single most important sandbox flag.
+
+**Communication** — the iframe sends results back via `postMessage`. The parent validates every incoming message:
+
+1. `ev.source` must be the exact iframe `contentWindow`
+2. `ev.data.runId` must match the randomly-generated ID issued for the current run
+
+Stale or spoofed messages are silently dropped.
+
+**Infinite-loop protection** — the parent starts a 10-second timer when code is executed. If no `script-done` acknowledgement arrives in time, the iframe is destroyed and the student sees _"Код работал слишком долго — возможно, бесконечный цикл"_.
+
+**`srcdoc`, not `src`** — student HTML is set via `iframe.srcdoc`, never as a navigable URL, so the frame never acquires a real origin.
+
+**`</script>` / `</style>` escaping** — user code is sanitised with a targeted string replacement before insertion into the `srcdoc` template, preventing premature tag closure.
+
+**Content-Security-Policy** — each sandbox document includes a `<meta>` CSP that blocks all outbound network requests (`connect-src 'none'`), disallows external scripts, and restricts image sources to `data:` URIs and `blob:` URLs.
+
+### XSS Protection
+
+All dynamic lesson HTML (fetched from Firestore) is passed through [DOMPurify](https://github.com/cure53/DOMPurify) before rendering:
+
+```typescript
+DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['h1','h2',…,'table','img',…],
+  ALLOWED_ATTR: ['href','src','alt','class','target','rel',…],
+})
+```
+
+`<script>`, inline event handlers (`onerror`, `onclick`, …), and `javascript:` URIs are stripped. The allowlist covers only the semantic HTML needed for lesson content.
+
+External links in lesson content should include `rel="noopener noreferrer"` to prevent tab-napping and referrer leakage.
+
+### Firestore Security Rules
+
+Rules are enforced server-side — the client app cannot bypass them.
+
+| Collection | Student | Teacher | Admin / Owner |
+|---|---|---|---|
+| `userRoles` | Read own · update displayName only | — | Full control |
+| `users/{uid}` | Read / write own | — | — |
+| `dynamicLessons` | Read **published** only (query enforced) | Read all | Full control |
+| `assignments` | Read **published** only (query enforced) | Create / manage own | Full control |
+| `submissions` | Create own · read own only | Read / grade all | Full control |
+| `classGroups` | Read / list joined classes | Create / manage own | Full control |
+| `teacherProfiles` | — | Read / write own token | Read (audit only) |
+
+**Key protections:**
+
+- A student's self-registration is locked to `role: 'student'`; only whitelisted fields are accepted. No client can elevate its own role.
+- On submission `create`, the fields `manualScore`, `gradedBy`, and `feedback` are forbidden — they can only be added by a teacher via `update`.
+- On submission `update` by a teacher, only the four grading fields (`manualScore`, `feedback`, `gradedBy`, `gradedAt`) may change; student answers and `userId` are immutable.
+- Submission list queries are scoped: students may only run queries filtered to their own `userId`; unfiltered scans are rejected at the rule level.
+- Dynamic lessons and assignments: students may only list/query with a `published == true` filter; unfiltered queries are rejected.
+- Class enumeration: unauthenticated users may look up a specific class by ID (for invite links) but cannot list all classes.
+
+### Storage Rules
+
+| Path | Read | Write |
+|---|---|---|
+| `lessons/{id}/images/*` | Authenticated users | **Teachers + Admins only** |
+| `users/{uid}/avatar/*` | Authenticated users | Owner only |
+| Everything else | ❌ | ❌ |
+
+Uploads are restricted to `image/jpeg`, `image/png`, `image/gif`, `image/webp`. Size limits: 5 MB for lesson images, 2 MB for avatars. SVG is excluded to eliminate the risk of embedded script execution.
+
+### Environment Variables
+
+Firebase credentials live in `.env.local` (never committed). `.gitignore` excludes all `.env*` files except `.env.example`. The example file documents every required variable without containing real values.
+
 ## License
 
 MIT

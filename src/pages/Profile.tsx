@@ -5,18 +5,15 @@ import {
   BookMarked,
   History,
   Settings,
-  GraduationCap,
   Loader2,
   Check,
-  Unlink,
-  Link2,
   ShieldCheck,
   ClipboardList,
   Trophy,
   Users,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -28,22 +25,14 @@ import { useProgressStore } from '@/store/useProgressStore'
 import { LESSON_META } from '@/lessons'
 import { formatScore, scoreVariant } from '@/utils/formatScore'
 import { auth } from '@/services/firebase'
-import {
-  connectGoogleClassroom,
-  getClassroomToken,
-  disconnectGoogleClassroom,
-  listCourses,
-  createClassroomAssignment,
-  type ClassroomAssignmentInput,
-} from '@/services/classroom.service'
-import { createAssignment, listAssignments } from '@/services/admin.service'
+import { listAssignments } from '@/services/admin.service'
 import { updateUserDisplayName } from '@/services/role.service'
 import { toast } from '@/store/useToastStore'
 import { getMySubmissions } from '@/services/submission.service'
 import { getUserClassId, getClassGroup, listTeacherClasses } from '@/services/class.service'
-import type { ClassroomCourse, AssignmentSubmission, Assignment, ClassGroup } from '@/types/roles'
+import type { AssignmentSubmission, Assignment, ClassGroup } from '@/types/roles'
 
-type Tab = 'overview' | 'assignments' | 'settings' | 'classroom'
+type Tab = 'overview' | 'assignments' | 'settings'
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -71,20 +60,6 @@ export function Profile() {
   const [newPassword, setNewPassword] = useState('')
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
-
-  // ─── Classroom state ─────────────────────────────────────────────────────────
-  const [classroomToken, setClassroomToken] = useState<string | null>(null)
-  const [classroomLoading, setClassroomLoading] = useState(false)
-  const [courses, setCourses] = useState<ClassroomCourse[]>([])
-  const [coursesLoading, setCoursesLoading] = useState(false)
-  const [newAssign, setNewAssign] = useState<{
-    title: string
-    description: string
-    courseId: string
-    dueDate: string
-  }>({ title: '', description: '', courseId: '', dueDate: '' })
-  const [assignSaving, setAssignSaving] = useState(false)
-  const [assignMsg, setAssignMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   // Load class info on mount — wait for auth to be ready
   useEffect(() => {
@@ -118,24 +93,6 @@ export function Profile() {
       .finally(() => setHistoryLoading(false))
   }, [user, activeTab])
 
-  // Load classroom token on mount (teacher only)
-  useEffect(() => {
-    if (!user || !isTeacher()) return
-    getClassroomToken(user.uid)
-      .then(setClassroomToken)
-      .catch(() => {})
-  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Load courses when token is available and tab active
-  useEffect(() => {
-    if (!classroomToken || activeTab !== 'classroom') return
-    setCoursesLoading(true)
-    listCourses(classroomToken)
-      .then(setCourses)
-      .catch(() => setCourses([]))
-      .finally(() => setCoursesLoading(false))
-  }, [classroomToken, activeTab])
-
   if (!user) {
     return (
       <PageTransition>
@@ -163,7 +120,6 @@ export function Profile() {
     { id: 'overview', label: 'Overview', icon: User, show: true },
     { id: 'assignments', label: 'Assignments', icon: ClipboardList, show: true },
     { id: 'settings', label: 'Settings', icon: Settings, show: true },
-    { id: 'classroom', label: 'Google Classroom', icon: GraduationCap, show: isTeacher() },
   ]
 
   // ─── Settings save ────────────────────────────────────────────────────────────
@@ -189,71 +145,6 @@ export function Profile() {
       setSettingsMsg({ type: 'err', text: err instanceof Error ? err.message : 'Failed to save' })
     } finally {
       setSettingsSaving(false)
-    }
-  }
-
-  // ─── Classroom connect ────────────────────────────────────────────────────────
-  async function handleConnectClassroom() {
-    setClassroomLoading(true)
-    try {
-      const { token } = await connectGoogleClassroom()
-      setClassroomToken(token)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to connect')
-    } finally {
-      setClassroomLoading(false)
-    }
-  }
-
-  async function handleDisconnectClassroom() {
-    if (!user) return
-    await disconnectGoogleClassroom(user.uid)
-    setClassroomToken(null)
-    setCourses([])
-  }
-
-  // ─── Create Classroom assignment ──────────────────────────────────────────────
-  async function handleCreateAssignment() {
-    if (!classroomToken || !user) return
-    if (!newAssign.title || !newAssign.courseId) {
-      setAssignMsg({ type: 'err', text: 'Title and course are required.' })
-      return
-    }
-    setAssignSaving(true)
-    setAssignMsg(null)
-    try {
-      const input: ClassroomAssignmentInput = {
-        title: newAssign.title,
-        description: newAssign.description,
-        dueDate: newAssign.dueDate ? new Date(newAssign.dueDate) : undefined,
-        linkUrl: window.location.origin + '/dashboard',
-        linkTitle: 'AccountingEdu — Dashboard',
-      }
-
-      const classroomId = await createClassroomAssignment(classroomToken, newAssign.courseId, input)
-      const course = courses.find((c) => c.id === newAssign.courseId)
-
-      // Mirror in Firestore
-      await createAssignment({
-        title: newAssign.title,
-        description: newAssign.description,
-        lessonSlug: undefined,
-        dueDate: newAssign.dueDate ? new Date(newAssign.dueDate).getTime() : undefined,
-        teacherId: user.uid,
-        teacherName: user.displayName ?? '',
-        published: true,
-        type: 'classroom',
-        classroomCourseId: newAssign.courseId,
-        classroomCourseName: course?.name ?? '',
-        classroomAssignmentId: classroomId,
-      })
-
-      setNewAssign({ title: '', description: '', courseId: '', dueDate: '' })
-      setAssignMsg({ type: 'ok', text: 'Assignment created in Google Classroom!' })
-    } catch (err: unknown) {
-      setAssignMsg({ type: 'err', text: err instanceof Error ? err.message : 'Failed to create' })
-    } finally {
-      setAssignSaving(false)
     }
   }
 
@@ -600,153 +491,6 @@ export function Profile() {
           </motion.div>
         )}
 
-        {/* ── Google Classroom (teachers only) ───────────────────────────────── */}
-        {activeTab === 'classroom' && isTeacher() && (
-          <motion.div
-            key="classroom"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Connection status */}
-            <Card>
-              <h2 className="font-heading font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                <GraduationCap size={18} /> Google Classroom Integration
-              </h2>
-
-              {classroomToken ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <Link2 size={16} />
-                    <span className="text-sm font-medium">Connected</span>
-                    <span className="text-xs text-slate-400">(token valid for ~1 hour)</span>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={handleDisconnectClassroom}>
-                    <Unlink size={13} /> Disconnect
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Connect your Google account to create assignments in your Classroom courses.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={handleConnectClassroom}
-                    loading={classroomLoading}
-                  >
-                    <Link2 size={13} /> Connect Google Classroom
-                  </Button>
-                </div>
-              )}
-            </Card>
-
-            {/* Create assignment */}
-            {classroomToken && (
-              <Card>
-                <h3 className="font-heading font-semibold text-slate-900 dark:text-white mb-4">
-                  Create Assignment
-                </h3>
-
-                {coursesLoading ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 size={20} className="animate-spin text-slate-400" />
-                  </div>
-                ) : courses.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    No active Classroom courses found for your account.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Course *
-                      </label>
-                      <select
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        value={newAssign.courseId}
-                        onChange={(e) =>
-                          setNewAssign((a) => ({ ...a, courseId: e.target.value }))
-                        }
-                      >
-                        <option value="">— Select a course —</option>
-                        {courses.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                            {c.section ? ` (${c.section})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Assignment Title *
-                      </label>
-                      <input
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        placeholder="Complete Lesson 1 Quiz"
-                        value={newAssign.title}
-                        onChange={(e) => setNewAssign((a) => ({ ...a, title: e.target.value }))}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        rows={3}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-                        placeholder="Instructions for students..."
-                        value={newAssign.description}
-                        onChange={(e) =>
-                          setNewAssign((a) => ({ ...a, description: e.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Due Date (optional)
-                      </label>
-                      <input
-                        type="date"
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        value={newAssign.dueDate}
-                        onChange={(e) =>
-                          setNewAssign((a) => ({ ...a, dueDate: e.target.value }))
-                        }
-                      />
-                    </div>
-
-                    {assignMsg && (
-                      <p
-                        className={`text-sm px-3 py-2 rounded-lg ${
-                          assignMsg.type === 'ok'
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                            : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {assignMsg.text}
-                      </p>
-                    )}
-
-                    <Button onClick={handleCreateAssignment} loading={assignSaving} size="sm">
-                      <GraduationCap size={14} /> Create in Google Classroom
-                    </Button>
-
-                    <p className="text-xs text-slate-400">
-                      The assignment will also be saved in the AccountingEdu system and visible in
-                      the Admin Panel.
-                    </p>
-                  </div>
-                )}
-              </Card>
-            )}
-          </motion.div>
-        )}
       </div>
     </PageTransition>
   )

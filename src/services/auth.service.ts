@@ -43,6 +43,11 @@ export async function resetPassword(email: string): Promise<void> {
 }
 
 export function onAuthChange(callback: (user: User | null) => void): () => void {
+  if (!auth) {
+    // Firebase not configured — immediately signal "no user" and return a no-op
+    callback(null)
+    return () => {}
+  }
   return onAuthStateChanged(auth, callback)
 }
 

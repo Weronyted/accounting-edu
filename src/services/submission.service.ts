@@ -10,48 +10,60 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Assignment, AssignmentSubmission } from '@/types/roles'
+import type { Assignment, AssignmentSubmission, TestCaseResult } from '@/types/roles'
 
 /**
  * Auto-grade a student's answers against the assignment's questions.
- * Returns { score, maxScore, percentage }.
+ *
+ * For code_task questions, pass pre-computed `codeResults` (from runCodeTask).
+ * Score for code_task = (passed tests / total tests) × question.points.
  */
 export function gradeSubmission(
   assignment: Assignment,
-  answers: Record<string, string>
+  answers: Record<string, string>,
+  codeResults?: Record<string, TestCaseResult[]>
 ): { score: number; maxScore: number; percentage: number } {
   const questions = assignment.questions ?? []
   const maxScore = assignment.maxScore ?? questions.reduce((s, q) => s + q.points, 0)
 
   let score = 0
   for (const q of questions) {
-    const answer = (answers[q.id] ?? '').trim().toLowerCase()
-    let correct = false
-
-    if (q.type === 'multiple_choice') {
-      correct = answer === q.correctAnswer
-    } else if (q.type === 'true_false') {
-      correct = answer === q.correctAnswer.toLowerCase()
-    } else if (q.type === 'short_answer') {
-      correct = answer === q.correctAnswer.trim().toLowerCase()
+    if (q.type === 'code_task') {
+      const results = codeResults?.[q.id] ?? []
+      const total   = q.testCases?.length ?? results.length
+      if (total === 0) continue
+      const passed  = results.filter((r) => r.passed).length
+      score += (passed / total) * q.points
+    } else {
+      const answer = (answers[q.id] ?? '').trim().toLowerCase()
+      let correct = false
+      if (q.type === 'multiple_choice') {
+        correct = answer === q.correctAnswer
+      } else if (q.type === 'true_false') {
+        correct = answer === q.correctAnswer.toLowerCase()
+      } else if (q.type === 'short_answer') {
+        correct = answer === q.correctAnswer.trim().toLowerCase()
+      }
+      if (correct) score += q.points
     }
-
-    if (correct) score += q.points
   }
 
+  // Round to avoid floating-point noise
+  score = Math.round(score * 10) / 10
   const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
   return { score, maxScore, percentage }
 }
 
-/** Submit a student's answers. Returns the submission ID. */
+/** Submit a student's answers. Returns the full submission record. */
 export async function submitAssignment(
   assignmentId: string,
   userId: string,
   displayName: string,
   assignment: Assignment,
-  answers: Record<string, string>
+  answers: Record<string, string>,
+  codeResults?: Record<string, TestCaseResult[]>
 ): Promise<AssignmentSubmission> {
-  const { score, maxScore, percentage } = gradeSubmission(assignment, answers)
+  const { score, maxScore, percentage } = gradeSubmission(assignment, answers, codeResults)
 
   const submission: Omit<AssignmentSubmission, 'id'> = {
     userId,
@@ -62,6 +74,7 @@ export async function submitAssignment(
     maxScore,
     percentage,
     submittedAt: Date.now(),
+    ...(codeResults && Object.keys(codeResults).length > 0 ? { codeResults } : {}),
   }
 
   const ref = await addDoc(
@@ -89,7 +102,7 @@ export async function getMySubmission(
   return { id: d.id, ...(d.data() as Omit<AssignmentSubmission, 'id'>) }
 }
 
-/** Get a single assignment by ID (for the TakeAssignment page). */
+/** Get a single assignment by ID. */
 export async function getAssignment(id: string): Promise<Assignment | null> {
   const snap = await getDoc(doc(db, 'assignments', id))
   if (!snap.exists()) return null
@@ -110,7 +123,6 @@ export async function updateSubmissionGrade(
     manualScore,
     manualNote: manualNote ?? '',
     gradedBy,
-    // Override displayed score with manual values
     score: manualScore,
     percentage: manualPercentage,
   })
@@ -127,9 +139,7 @@ export async function listSubmissions(assignmentId: string): Promise<AssignmentS
   }))
 }
 
-/** Get all submissions made by a student across all assignments.
- *  Queries each assignment's subcollection individually to avoid
- *  needing a collectionGroup index. */
+/** Get all submissions made by a student across all assignments. */
 export async function getMySubmissions(userId: string): Promise<AssignmentSubmission[]> {
   const assignmentsSnap = await getDocs(collection(db, 'assignments'))
   const assignmentIds = assignmentsSnap.docs.map((d) => d.id)

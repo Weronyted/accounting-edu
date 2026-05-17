@@ -15,7 +15,7 @@ import { confirm } from '@/store/useConfirmStore'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import type { Assignment, AssignmentQuestion, QuestionType } from '@/types/roles'
+import type { Assignment, AssignmentQuestion, QuestionType, TestCase } from '@/types/roles'
 import { LESSON_META } from '@/lessons'
 
 // ─── Empty templates ──────────────────────────────────────────────────────────
@@ -31,13 +31,16 @@ function emptyQuestion(): AssignmentQuestion {
   }
 }
 
+function emptyTestCase(): TestCase {
+  return { id: crypto.randomUUID(), description: '', check: '' }
+}
+
 const EMPTY_FORM = {
   title: '',
   description: '',
   lessonSlug: '',
   dueDate: undefined as number | undefined,
   published: false,
-  type: 'internal' as 'internal' | 'classroom',
   questions: [] as AssignmentQuestion[],
 }
 
@@ -61,14 +64,46 @@ function QuestionEditor({
     if (type === 'multiple_choice') {
       next.options = ['', '', '', '']
       next.correctAnswer = '0'
+      next.starterCode = undefined
+      next.starterLanguage = undefined
+      next.testCases = undefined
     } else if (type === 'true_false') {
       next.options = undefined
       next.correctAnswer = 'true'
-    } else {
+      next.starterCode = undefined
+      next.starterLanguage = undefined
+      next.testCases = undefined
+    } else if (type === 'short_answer') {
       next.options = undefined
       next.correctAnswer = ''
+      next.starterCode = undefined
+      next.starterLanguage = undefined
+      next.testCases = undefined
+    } else if (type === 'code_task') {
+      next.options = undefined
+      next.correctAnswer = ''
+      next.starterCode = ''
+      next.starterLanguage = 'js'
+      next.testCases = [emptyTestCase()]
     }
     onChange(next)
+  }
+
+  function addTestCase() {
+    onChange({ ...q, testCases: [...(q.testCases ?? []), emptyTestCase()] })
+  }
+
+  function updateTestCase(id: string, field: keyof TestCase, value: string) {
+    onChange({
+      ...q,
+      testCases: (q.testCases ?? []).map((tc) =>
+        tc.id === id ? { ...tc, [field]: value } : tc
+      ),
+    })
+  }
+
+  function removeTestCase(id: string) {
+    onChange({ ...q, testCases: (q.testCases ?? []).filter((tc) => tc.id !== id) })
   }
 
   return (
@@ -78,6 +113,11 @@ function QuestionEditor({
         <GripVertical size={14} className="text-slate-300 cursor-grab" />
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex-1">
           Question {index + 1}
+          {q.type === 'code_task' && (
+            <span className="ml-2 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-semibold">
+              CODE
+            </span>
+          )}
         </span>
         <span className="text-xs text-slate-400">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
         <button
@@ -124,6 +164,7 @@ function QuestionEditor({
                 <option value="multiple_choice">Multiple Choice</option>
                 <option value="true_false">True / False</option>
                 <option value="short_answer">Short Answer</option>
+                <option value="code_task">Code Task</option>
               </select>
             </div>
             <div className="w-24">
@@ -233,6 +274,107 @@ function QuestionEditor({
               />
             </div>
           )}
+
+          {/* Code task */}
+          {q.type === 'code_task' && (
+            <div className="space-y-3">
+              {/* Language selector */}
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Language
+                </label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  value={q.starterLanguage ?? 'js'}
+                  onChange={(e) =>
+                    onChange({ ...q, starterLanguage: e.target.value as 'html' | 'css' | 'js' })
+                  }
+                >
+                  <option value="js">JavaScript</option>
+                  <option value="html">HTML + CSS</option>
+                  <option value="css">CSS only</option>
+                </select>
+              </div>
+
+              {/* Starter code */}
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Starter code (shown to student)
+                </label>
+                <textarea
+                  rows={5}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                  value={q.starterCode ?? ''}
+                  onChange={(e) => onChange({ ...q, starterCode: e.target.value })}
+                  placeholder={
+                    (q.starterLanguage ?? 'js') === 'js'
+                      ? '// Write your JS here\nconsole.log("Hello")'
+                      : (q.starterLanguage === 'html'
+                        ? '<h1>Hello</h1>'
+                        : 'body { color: red; }')
+                  }
+                  spellCheck={false}
+                />
+              </div>
+
+              {/* Test cases */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Test cases
+                  </label>
+                  <button
+                    onClick={addTestCase}
+                    className="text-xs text-primary dark:text-primary-dark hover:underline flex items-center gap-1"
+                  >
+                    <PlusCircle size={12} /> Add test
+                  </button>
+                </div>
+                {(q.testCases ?? []).length === 0 && (
+                  <p className="text-xs text-slate-400 py-2 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
+                    No tests — click <strong>Add test</strong>
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {(q.testCases ?? []).map((tc) => (
+                    <div
+                      key={tc.id}
+                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 space-y-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <input
+                            className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            value={tc.description}
+                            onChange={(e) => updateTestCase(tc.id, 'description', e.target.value)}
+                            placeholder="Description shown to student (e.g. Created <h1> tag)"
+                          />
+                        </div>
+                        <button
+                          onClick={() => removeTestCase(tc.id)}
+                          className="p-1 text-slate-400 hover:text-red-400 shrink-0"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <div>
+                        <input
+                          className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-900 dark:bg-slate-900 text-xs font-mono text-green-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          value={tc.check}
+                          onChange={(e) => updateTestCase(tc.id, 'check', e.target.value)}
+                          placeholder="JS expression (truthy = pass): e.g. !!document.querySelector('h1')"
+                          spellCheck={false}
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Available: <code className="font-mono">document</code>, <code className="font-mono">getComputedStyle(el)</code>, <code className="font-mono">_logs[]</code>, <code className="font-mono">_lastLog</code>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -270,7 +412,6 @@ export function AssignmentsTab() {
       lessonSlug: a.lessonSlug ?? '',
       dueDate: a.dueDate,
       published: a.published,
-      type: a.type,
       questions: a.questions ? [...a.questions] : [],
     })
   }
@@ -311,7 +452,7 @@ export function AssignmentsTab() {
         lessonSlug: form.lessonSlug || undefined,
         dueDate: form.dueDate,
         published: form.published,
-        type: form.type,
+        type: 'internal',
         teacherId: user.uid,
         teacherName: user.displayName ?? '',
         questions: form.questions,
@@ -528,54 +669,61 @@ export function AssignmentsTab() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {assignments.map((a) => (
-            <Card key={a.id} className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-slate-800 dark:text-slate-200 truncate">
-                    {a.title}
+          {assignments.map((a) => {
+            const codeTaskCount = a.questions?.filter((q) => q.type === 'code_task').length ?? 0
+            return (
+              <Card key={a.id} className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                      {a.title}
+                    </p>
+                    <Badge variant={a.published ? 'success' : 'default'}>
+                      {a.published ? 'Published' : 'Draft'}
+                    </Badge>
+                    {codeTaskCount > 0 && (
+                      <Badge variant="default" className="text-violet-600 dark:text-violet-400">
+                        {codeTaskCount} code task{codeTaskCount !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                    {(a.questions?.length ?? 0) > 0 && (
+                      <Badge variant="default">{a.questions!.length} questions · {a.maxScore} pts</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {a.lessonSlug
+                      ? `Lesson: ${LESSON_META[a.lessonSlug]?.title ?? a.lessonSlug}`
+                      : 'No lesson'}
+                    {a.dueDate ? ` · Due ${new Date(a.dueDate).toLocaleDateString()}` : ''}
+                    {a.teacherName ? ` · By ${a.teacherName}` : ''}
                   </p>
-                  <Badge variant={a.published ? 'success' : 'default'}>
-                    {a.published ? 'Published' : 'Draft'}
-                  </Badge>
-                  {a.type === 'classroom' && <Badge variant="warning">Google Classroom</Badge>}
-                  {(a.questions?.length ?? 0) > 0 && (
-                    <Badge variant="default">{a.questions!.length} questions · {a.maxScore} pts</Badge>
-                  )}
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {a.lessonSlug
-                    ? `Lesson: ${LESSON_META[a.lessonSlug]?.title ?? a.lessonSlug}`
-                    : 'No lesson'}
-                  {a.dueDate ? ` · Due ${new Date(a.dueDate).toLocaleDateString()}` : ''}
-                  {a.teacherName ? ` · By ${a.teacherName}` : ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => togglePublished(a)}
-                  title={a.published ? 'Unpublish' : 'Publish'}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
-                >
-                  {a.published ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-                <button
-                  onClick={() => openEdit(a)}
-                  title="Edit"
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  onClick={() => handleDelete(a.id, a.title)}
-                  title="Delete"
-                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 transition-colors"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </Card>
-          ))}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => togglePublished(a)}
+                    title={a.published ? 'Unpublish' : 'Publish'}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
+                  >
+                    {a.published ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                  <button
+                    onClick={() => openEdit(a)}
+                    title="Edit"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(a.id, a.title)}
+                    title="Delete"
+                    className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 transition-colors"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

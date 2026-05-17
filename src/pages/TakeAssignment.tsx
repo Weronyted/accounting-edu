@@ -1,18 +1,62 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, XCircle, Clock, BookOpen, Loader2, ChevronRight } from 'lucide-react'
+import {
+  CheckCircle2, XCircle, Clock, BookOpen, Loader2, ChevronRight,
+  AlertTriangle, Code2,
+} from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { useTranslation } from 'react-i18next'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { CodeEditor } from '@/components/code/CodeEditor'
 import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from '@/store/useToastStore'
 import { confirm } from '@/store/useConfirmStore'
 import { getAssignment, submitAssignment, getMySubmission } from '@/services/submission.service'
-import type { Assignment, AssignmentSubmission } from '@/types/roles'
+import { runCodeTask } from '@/utils/codeRunner'
+import { explainError } from '@/utils/errorExplainer'
+import type { Assignment, AssignmentQuestion, AssignmentSubmission, TestCaseResult } from '@/types/roles'
 import { LESSON_META } from '@/lessons'
+
+// ─── Code-task failure helper ─────────────────────────────────────────────────
+
+function CodeFailHelp({
+  description,
+  error,
+}: {
+  description: string
+  error?: string
+}) {
+  const { i18n } = useTranslation()
+  const isRu = i18n.language?.startsWith('ru') || i18n.language?.startsWith('uz')
+
+  const fakeErrorInfo = { type: 'CodeTestFailed', message: description }
+  const ex = explainError(fakeErrorInfo)[isRu ? 'ru' : 'en']
+
+  return (
+    <div className="mt-2 border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2.5 text-xs">
+      <div className="flex items-start gap-1.5">
+        <AlertTriangle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-amber-800 dark:text-amber-300">{ex.title}</p>
+          <p className="text-amber-700 dark:text-amber-400 mt-0.5">{ex.explanation}</p>
+          <p className="text-amber-700 dark:text-amber-400 mt-1">
+            <span className="font-medium">{isRu ? 'Совет: ' : 'Tip: '}</span>
+            {ex.tip}
+          </p>
+          {error && (
+            <code className="block mt-1.5 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded font-mono text-[10px] text-amber-800 dark:text-amber-200 break-all">
+              {error}
+            </code>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── Result Screen ────────────────────────────────────────────────────────────
 
@@ -23,6 +67,8 @@ function ResultScreen({
   submission: AssignmentSubmission
   assignment: Assignment
 }) {
+  const { i18n } = useTranslation()
+  const isRu = i18n.language?.startsWith('ru') || i18n.language?.startsWith('uz')
   const pct = submission.percentage
   const passed = pct >= 60
 
@@ -30,63 +76,73 @@ function ResultScreen({
     <motion.div
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-lg mx-auto text-center space-y-6"
+      className="max-w-2xl mx-auto space-y-6"
     >
-      <div
-        className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center ${
-          passed
-            ? 'bg-green-100 dark:bg-green-900/30'
-            : 'bg-red-100 dark:bg-red-900/30'
-        }`}
-      >
-        {passed ? (
-          <CheckCircle2 size={40} className="text-green-500" />
-        ) : (
-          <XCircle size={40} className="text-red-400" />
-        )}
-      </div>
-
-      <div>
-        <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white mb-1">
-          {passed ? 'Well done!' : 'Keep practising'}
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400">
-          {assignment.title}
-        </p>
-      </div>
-
-      <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 space-y-3">
-        <div className="text-5xl font-heading font-bold text-slate-900 dark:text-white">
-          {pct}%
+      {/* Score card */}
+      <Card className="text-center space-y-4">
+        <div
+          className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center ${
+            passed
+              ? 'bg-green-100 dark:bg-green-900/30'
+              : 'bg-red-100 dark:bg-red-900/30'
+          }`}
+        >
+          {passed ? (
+            <CheckCircle2 size={40} className="text-green-500" />
+          ) : (
+            <XCircle size={40} className="text-red-400" />
+          )}
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {submission.score} / {submission.maxScore} points
-        </p>
 
-        {/* Progress bar */}
-        <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`h-full rounded-full ${
-              pct >= 80
-                ? 'bg-green-500'
-                : pct >= 60
-                ? 'bg-yellow-500'
-                : 'bg-red-400'
-            }`}
-          />
+        <div>
+          <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white mb-1">
+            {passed
+              ? (isRu ? 'Отлично!' : 'Well done!')
+              : (isRu ? 'Продолжай практиковаться' : 'Keep practising')}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400">{assignment.title}</p>
         </div>
-      </div>
 
-      {/* Per-question breakdown */}
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 space-y-3">
+          <div className="text-5xl font-heading font-bold text-slate-900 dark:text-white">
+            {pct}%
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {submission.score} / {submission.maxScore} {isRu ? 'баллов' : 'points'}
+          </p>
+          <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+              className={`h-full rounded-full ${
+                pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-400'
+              }`}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Per-question review */}
       {assignment.questions && assignment.questions.length > 0 && (
-        <Card className="text-left space-y-2">
-          <h3 className="font-heading font-semibold text-slate-800 dark:text-slate-200 text-sm mb-3">
-            Answer Review
+        <Card className="space-y-3">
+          <h3 className="font-heading font-semibold text-slate-800 dark:text-slate-200 text-sm">
+            {isRu ? 'Разбор ответов' : 'Answer Review'}
           </h3>
-          {assignment.questions.map((q) => {
+
+          {assignment.questions.map((q, idx) => {
+            if (q.type === 'code_task') {
+              return (
+                <CodeTaskReview
+                  key={q.id}
+                  q={q}
+                  idx={idx}
+                  results={submission.codeResults?.[q.id] ?? []}
+                  isRu={isRu}
+                />
+              )
+            }
+
             const given = submission.answers[q.id] ?? ''
             const isCorrect =
               q.type === 'multiple_choice'
@@ -116,15 +172,23 @@ function ResultScreen({
                     <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-800 dark:text-slate-200 font-medium">{q.text}</p>
+                    <p className="text-slate-700 dark:text-slate-300 font-medium text-xs text-slate-400 mb-0.5">
+                      {isRu ? 'Вопрос' : 'Q'} {idx + 1}
+                    </p>
+                    <p className="text-slate-800 dark:text-slate-200">{q.text}</p>
                     {!isCorrect && (
                       <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                        Correct answer: <strong>{correctLabel}</strong>
+                        {isRu ? 'Правильный ответ: ' : 'Correct answer: '}
+                        <strong>{correctLabel}</strong>
                       </p>
                     )}
                   </div>
-                  <span className={`text-xs font-medium shrink-0 ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                    {isCorrect ? `+${q.points}` : '0'} pts
+                  <span
+                    className={`text-xs font-medium shrink-0 ${
+                      isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-500'
+                    }`}
+                  >
+                    {isCorrect ? `+${q.points}` : '0'} {isRu ? 'б.' : 'pts'}
                   </span>
                 </div>
               </div>
@@ -136,13 +200,13 @@ function ResultScreen({
       <div className="flex justify-center gap-3">
         <Link to="/dashboard">
           <Button variant="outline" size="sm">
-            Dashboard
+            {isRu ? 'Дашборд' : 'Dashboard'}
           </Button>
         </Link>
         {assignment.lessonSlug && (
           <Link to={`/lessons/${assignment.lessonSlug}`}>
             <Button size="sm">
-              <BookOpen size={14} /> Review Lesson
+              <BookOpen size={14} /> {isRu ? 'Повторить урок' : 'Review Lesson'}
             </Button>
           </Link>
         )}
@@ -151,19 +215,92 @@ function ResultScreen({
   )
 }
 
+// ─── Code-task result review ──────────────────────────────────────────────────
+
+function CodeTaskReview({
+  q,
+  idx,
+  results,
+  isRu,
+}: {
+  q: AssignmentQuestion
+  idx: number
+  results: TestCaseResult[]
+  isRu: boolean
+}) {
+  const passed = results.filter((r) => r.passed).length
+  const total  = results.length
+  const allPass = passed === total && total > 0
+
+  return (
+    <div
+      className={`p-3 rounded-lg border text-sm ${
+        allPass
+          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10'
+          : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'
+      }`}
+    >
+      <div className="flex items-start gap-2 mb-2">
+        <Code2 size={14} className={`mt-0.5 shrink-0 ${allPass ? 'text-green-500' : 'text-amber-500'}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-slate-700 dark:text-slate-300 font-medium text-xs text-slate-400 mb-0.5">
+            {isRu ? 'Задание' : 'Code Task'} {idx + 1}
+          </p>
+          <p className="text-slate-800 dark:text-slate-200 font-medium">{q.text}</p>
+        </div>
+        <span className={`text-xs font-medium shrink-0 ${allPass ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+          {passed}/{total} {isRu ? 'тест.' : 'tests'}
+        </span>
+      </div>
+
+      {/* Test case list */}
+      {results.length === 0 && (
+        <p className="text-xs text-slate-400 ml-6">{isRu ? 'Тесты не запускались' : 'No tests ran'}</p>
+      )}
+      <div className="ml-6 space-y-1.5">
+        {results.map((tc) => (
+          <div key={tc.id}>
+            <div className="flex items-center gap-1.5 text-xs">
+              {tc.passed ? (
+                <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+              ) : (
+                <XCircle size={12} className="text-red-400 shrink-0" />
+              )}
+              <span className={tc.passed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
+                {tc.description}
+              </span>
+            </div>
+            {!tc.passed && (
+              <CodeFailHelp description={tc.description} error={tc.error} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function TakeAssignment() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuthStore()
-  const [assignment, setAssignment] = useState<Assignment | null>(null)
-  const [existing, setExisting] = useState<AssignmentSubmission | null>(null)
-  const [pageLoading, setPageLoading] = useState(true)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<AssignmentSubmission | null>(null)
-  const [currentQ, setCurrentQ] = useState(0)
+  const { i18n } = useTranslation()
+  const isRu = i18n.language?.startsWith('ru') || i18n.language?.startsWith('uz')
 
+  const [assignment, setAssignment] = useState<Assignment | null>(null)
+  const [existing, setExisting]     = useState<AssignmentSubmission | null>(null)
+  const [pageLoading, setPageLoading] = useState(true)
+  const [answers, setAnswers]       = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [result, setResult]         = useState<AssignmentSubmission | null>(null)
+
+  // Code stored in a ref — updated by CodeEditor's onCodeChange, read at submit time
+  const codeRef = useRef<Record<string, { html: string; css: string; js: string }>>({})
+  // Track "has student touched this code task" for progress bar
+  const [codeTouched, setCodeTouched] = useState<Record<string, boolean>>({})
+
+  // ── Load assignment ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return
     Promise.all([
@@ -174,36 +311,94 @@ export function TakeAssignment() {
         setAssignment(a)
         setExisting(sub)
         if (sub) setResult(sub)
+
+        // Pre-populate codeRef with starter code for each code_task
+        if (a?.questions) {
+          for (const q of a.questions) {
+            if (q.type === 'code_task') {
+              const lang = q.starterLanguage ?? 'js'
+              codeRef.current[q.id] = {
+                html: lang === 'html' ? (q.starterCode ?? '') : '',
+                css:  lang === 'css'  ? (q.starterCode ?? '') : '',
+                js:   lang === 'js'   ? (q.starterCode ?? '') : '',
+              }
+            }
+          }
+        }
       })
       .finally(() => setPageLoading(false))
   }, [id, user])
 
+  // ── Code change handler (called by each CodeEditor) ──────────────────────────
+  const makeCodeChangeHandler = useCallback(
+    (qId: string) => (html: string, css: string, js: string) => {
+      codeRef.current[qId] = { html, css, js }
+      setCodeTouched((prev) => (prev[qId] ? prev : { ...prev, [qId]: true }))
+    },
+    []
+  )
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
   async function handleSubmit() {
     if (!assignment || !user || !id) return
+
     const questions = assignment.questions ?? []
-    const unanswered = questions.filter((q) => !answers[q.id])
+
+    // Check for unanswered MC/TF/SA questions
+    const unanswered = questions.filter(
+      (q) => q.type !== 'code_task' && !answers[q.id]
+    )
     if (unanswered.length > 0) {
       const ok = await confirm({
-        title: 'Unanswered questions',
-        message: `${unanswered.length} question(s) left unanswered. Submit anyway?`,
-        confirmLabel: 'Submit anyway',
+        title: isRu ? 'Не все вопросы отвечены' : 'Unanswered questions',
+        message: isRu
+          ? `${unanswered.length} вопрос(ов) без ответа. Всё равно отправить?`
+          : `${unanswered.length} question(s) left unanswered. Submit anyway?`,
+        confirmLabel: isRu ? 'Отправить' : 'Submit anyway',
       })
       if (!ok) return
     }
+
     setSubmitting(true)
     try {
-      const sub = await submitAssignment(id, user.uid, user.displayName ?? '', assignment, answers)
+      // Run all code_task tests and collect results
+      const codeTaskResults: Record<string, TestCaseResult[]> = {}
+      const finalAnswers = { ...answers }
+
+      for (const q of questions) {
+        if (q.type === 'code_task') {
+          const code = codeRef.current[q.id] ?? { html: '', css: '', js: '' }
+          finalAnswers[q.id] = JSON.stringify(code)
+
+          if (q.testCases && q.testCases.length > 0) {
+            const results = await runCodeTask(code, q.testCases)
+            codeTaskResults[q.id] = results
+          } else {
+            codeTaskResults[q.id] = []
+          }
+        }
+      }
+
+      const sub = await submitAssignment(
+        id,
+        user.uid,
+        user.displayName ?? '',
+        assignment,
+        finalAnswers,
+        codeTaskResults
+      )
       setResult(sub)
       if (sub.percentage >= 80) {
-        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } })
+        confetti({ particleCount: 140, spread: 70, origin: { y: 0.6 } })
       }
     } catch {
-      toast.error('Failed to submit. Please try again.')
+      toast.error(isRu ? 'Ошибка при отправке. Попробуйте ещё раз.' : 'Failed to submit. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
+  // ── Loading / not-found ──────────────────────────────────────────────────────
   if (pageLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -215,15 +410,23 @@ export function TakeAssignment() {
   if (!assignment) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] flex-col gap-4">
-        <p className="text-slate-500">Assignment not found.</p>
+        <p className="text-slate-500">{isRu ? 'Задание не найдено.' : 'Assignment not found.'}</p>
         <Link to="/dashboard" className="text-primary dark:text-primary-dark hover:underline text-sm">
-          Back to Dashboard
+          {isRu ? 'На дашборд' : 'Back to Dashboard'}
         </Link>
       </div>
     )
   }
 
   const questions = assignment.questions ?? []
+
+  // Progress: manual q answered + code tasks touched
+  const manualQs       = questions.filter((q) => q.type !== 'code_task')
+  const manualAnswered = manualQs.filter((q) => !!answers[q.id]).length
+  const codeTouchedCount = questions.filter(
+    (q) => q.type === 'code_task' && codeTouched[q.id]
+  ).length
+  const answeredCount = manualAnswered + codeTouchedCount
 
   return (
     <PageTransition>
@@ -232,10 +435,10 @@ export function TakeAssignment() {
         <div className="mb-6">
           <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
             <Link to="/dashboard" className="hover:text-slate-600 dark:hover:text-slate-300">
-              Dashboard
+              {isRu ? 'Дашборд' : 'Dashboard'}
             </Link>
             <ChevronRight size={12} />
-            <span>Assignment</span>
+            <span>{isRu ? 'Задание' : 'Assignment'}</span>
           </div>
           <h1 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white">
             {assignment.title}
@@ -245,11 +448,11 @@ export function TakeAssignment() {
               {assignment.description}
             </p>
           )}
-          <div className="flex items-center gap-3 mt-3 text-xs text-slate-400">
+          <div className="flex items-center gap-3 mt-3 text-xs text-slate-400 flex-wrap">
             {assignment.dueDate && (
               <span className="flex items-center gap-1">
                 <Clock size={12} />
-                Due {new Date(assignment.dueDate).toLocaleDateString()}
+                {isRu ? 'Срок' : 'Due'} {new Date(assignment.dueDate).toLocaleDateString()}
               </span>
             )}
             {assignment.lessonSlug && LESSON_META[assignment.lessonSlug] && (
@@ -262,7 +465,9 @@ export function TakeAssignment() {
               </Link>
             )}
             {questions.length > 0 && (
-              <span>{questions.length} questions · {assignment.maxScore} pts</span>
+              <span>
+                {questions.length} {isRu ? 'вопр.' : 'questions'} · {assignment.maxScore} {isRu ? 'б.' : 'pts'}
+              </span>
             )}
           </div>
         </div>
@@ -273,7 +478,7 @@ export function TakeAssignment() {
           ) : questions.length === 0 ? (
             <Card key="no-q" className="text-center py-8">
               <p className="text-slate-500 dark:text-slate-400">
-                This assignment has no questions yet.
+                {isRu ? 'В задании пока нет вопросов.' : 'This assignment has no questions yet.'}
               </p>
             </Card>
           ) : (
@@ -283,18 +488,16 @@ export function TakeAssignment() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              {/* Progress */}
+              {/* Progress bar */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary dark:bg-primary-dark rounded-full transition-all"
-                    style={{
-                      width: `${(Object.keys(answers).length / questions.length) * 100}%`,
-                    }}
+                    style={{ width: `${(answeredCount / questions.length) * 100}%` }}
                   />
                 </div>
                 <span className="text-xs text-slate-400 shrink-0">
-                  {Object.keys(answers).length} / {questions.length} answered
+                  {answeredCount} / {questions.length} {isRu ? 'отвечено' : 'answered'}
                 </span>
               </div>
 
@@ -305,9 +508,9 @@ export function TakeAssignment() {
                     <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 dark:bg-primary-dark/10 text-primary dark:text-primary-dark text-xs font-bold flex items-center justify-center">
                       {idx + 1}
                     </span>
-                    <p className="font-medium text-slate-800 dark:text-slate-200">{q.text}</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200 flex-1">{q.text}</p>
                     <Badge variant="default" className="shrink-0 text-xs ml-auto">
-                      {q.points} pt{q.points !== 1 ? 's' : ''}
+                      {q.points} {isRu ? 'б.' : 'pt'}{q.points !== 1 && !isRu ? 's' : ''}
                     </Badge>
                   </div>
 
@@ -357,7 +560,7 @@ export function TakeAssignment() {
                             onChange={() => setAnswers((a) => ({ ...a, [q.id]: v }))}
                             className="sr-only"
                           />
-                          {v}
+                          {isRu ? (v === 'true' ? 'Верно' : 'Неверно') : v}
                         </label>
                       ))}
                     </div>
@@ -367,13 +570,27 @@ export function TakeAssignment() {
                   {q.type === 'short_answer' && (
                     <input
                       className="w-full ml-9 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      placeholder="Your answer…"
+                      placeholder={isRu ? 'Ваш ответ…' : 'Your answer…'}
                       value={answers[q.id] ?? ''}
                       onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
                     />
                   )}
+
+                  {/* Code task */}
+                  {q.type === 'code_task' && (
+                    <CodeTaskEditor q={q} onCodeChange={makeCodeChangeHandler(q.id)} />
+                  )}
                 </Card>
               ))}
+
+              {/* Already submitted notice */}
+              {existing && !result && (
+                <p className="text-xs text-center text-slate-400">
+                  {isRu
+                    ? 'Вы уже сдавали это задание. Новая попытка перезапишет предыдущий результат.'
+                    : 'You have already submitted this assignment. A new attempt will overwrite your previous result.'}
+                </p>
+              )}
 
               <Button
                 className="w-full"
@@ -381,12 +598,65 @@ export function TakeAssignment() {
                 loading={submitting}
                 size="lg"
               >
-                Submit Assignment
+                {submitting
+                  ? (isRu ? 'Проверяем код…' : 'Running tests…')
+                  : (isRu ? 'Сдать задание' : 'Submit Assignment')}
               </Button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     </PageTransition>
+  )
+}
+
+// ─── Code Task Editor sub-component ──────────────────────────────────────────
+
+function CodeTaskEditor({
+  q,
+  onCodeChange,
+}: {
+  q: AssignmentQuestion
+  onCodeChange: (html: string, css: string, js: string) => void
+}) {
+  const lang = q.starterLanguage ?? 'js'
+
+  const enabledTabs: ('html' | 'css' | 'js')[] =
+    lang === 'html' ? ['html', 'css'] :
+    lang === 'css'  ? ['css'] :
+    ['js']
+
+  const initialHtml = lang === 'html' ? (q.starterCode ?? '') : ''
+  const initialCss  = lang === 'css'  ? (q.starterCode ?? '') : ''
+  const initialJs   = lang === 'js'   ? (q.starterCode ?? '') : ''
+
+  // Show test descriptions as hints
+  const { i18n } = useTranslation()
+  const isRu = i18n.language?.startsWith('ru') || i18n.language?.startsWith('uz')
+
+  return (
+    <div className="ml-0 space-y-3">
+      <CodeEditor
+        initialHtml={initialHtml}
+        initialCss={initialCss}
+        initialJs={initialJs}
+        enabledTabs={enabledTabs}
+        editorHeight="260px"
+        onCodeChange={onCodeChange}
+      />
+      {q.testCases && q.testCases.length > 0 && (
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-1.5">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+            {isRu ? 'Что проверяется:' : 'What will be tested:'}
+          </p>
+          {q.testCases.map((tc) => (
+            <div key={tc.id} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+              <span className="text-slate-300 dark:text-slate-600">○</span>
+              {tc.description}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
